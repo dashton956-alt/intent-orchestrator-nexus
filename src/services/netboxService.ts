@@ -7,9 +7,9 @@ export class NetBoxService {
   private apiToken: string;
 
   constructor() {
-    // TODO: Replace with your actual NetBox API endpoint and token
-    this.baseUrl = process.env.NETBOX_API_URL || "https://your-netbox-instance.com/api";
-    this.apiToken = process.env.NETBOX_API_TOKEN || "YOUR_NETBOX_TOKEN_HERE";
+    // Use Vite environment variables (prefixed with VITE_) or fallback values
+    this.baseUrl = import.meta.env.VITE_NETBOX_API_URL || "https://your-netbox-instance.com/api";
+    this.apiToken = import.meta.env.VITE_NETBOX_API_TOKEN || "YOUR_NETBOX_TOKEN_HERE";
   }
 
   // Fetch devices from NetBox

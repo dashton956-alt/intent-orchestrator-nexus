@@ -8,10 +8,10 @@ export class NSOService {
   private password: string;
 
   constructor() {
-    // TODO: Replace with your actual NSO API endpoint and credentials
-    this.baseUrl = process.env.NSO_API_URL || "https://your-nso-instance.com:8080/restconf";
-    this.username = process.env.NSO_USERNAME || "YOUR_NSO_USERNAME";
-    this.password = process.env.NSO_PASSWORD || "YOUR_NSO_PASSWORD";
+    // Use Vite environment variables (prefixed with VITE_) or fallback values
+    this.baseUrl = import.meta.env.VITE_NSO_API_URL || "https://your-nso-instance.com:8080/restconf";
+    this.username = import.meta.env.VITE_NSO_USERNAME || "YOUR_NSO_USERNAME";
+    this.password = import.meta.env.VITE_NSO_PASSWORD || "YOUR_NSO_PASSWORD";
   }
 
   // Deploy configuration to NSO
