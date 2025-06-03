@@ -1,10 +1,11 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
 export const IntentCreator = () => {
@@ -12,6 +13,12 @@ export const IntentCreator = () => {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [generatedConfig, setGeneratedConfig] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Toggle states for automation tools
+  const [enableNSO, setEnableNSO] = useState(true);
+  const [enableAnsible, setEnableAnsible] = useState(false);
+  const [enableTerraform, setEnableTerraform] = useState(false);
+  const [enableNornir, setEnableNornir] = useState(false);
 
   const templates = [
     { id: "vlan", name: "VLAN Configuration", description: "Create or modify VLANs" },
@@ -39,32 +46,51 @@ export const IntentCreator = () => {
       return;
     }
 
+    // Check if at least one automation tool is enabled
+    if (!enableNSO && !enableAnsible && !enableTerraform && !enableNornir) {
+      toast({
+        title: "Automation Tool Required",
+        description: "Please enable at least one automation tool (NSO, Ansible, Terraform, or Nornir).",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGenerating(true);
     
     // Simulate AI processing
     setTimeout(() => {
-      const mockConfig = generateMockNSOConfig(naturalLanguageInput, selectedTemplate);
+      const mockConfig = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
+        nso: enableNSO,
+        ansible: enableAnsible,
+        terraform: enableTerraform,
+        nornir: enableNornir
+      });
       setGeneratedConfig(mockConfig);
       setIsGenerating(false);
       
       toast({
         title: "Intent Generated",
-        description: "AI has successfully converted your request into NSO configuration.",
+        description: "AI has successfully converted your request into automation configurations.",
       });
     }, 2000);
   };
 
-  const generateMockNSOConfig = (input: string, template: string) => {
-    // Mock NSO YANG configuration based on input
+  const generateMockConfiguration = (input: string, template: string, tools: { nso: boolean, ansible: boolean, terraform: boolean, nornir: boolean }) => {
     const timestamp = new Date().toISOString();
+    const enabledTools = Object.entries(tools).filter(([_, enabled]) => enabled).map(([tool, _]) => tool.toUpperCase());
     
-    if (input.toLowerCase().includes("vlan")) {
-      return `
-# Generated NSO Configuration
+    let config = `# Generated Multi-Tool Configuration
 # Intent: ${input}
-# Template: ${template || 'Auto-detected: VLAN'}
+# Template: ${template || 'Auto-detected'}
+# Enabled Tools: ${enabledTools.join(', ')}
 # Generated: ${timestamp}
 
+`;
+
+    if (tools.nso) {
+      config += `
+## NSO Configuration
 configure
   devices device core-sw-01
     config
@@ -73,34 +99,70 @@ configure
         ip address 192.168.100.1 255.255.255.0
         no shutdown
       exit
-      ios:vlan 100
-        name "Marketing-VLAN"
-      exit
-      ios:interface range GigabitEthernet0/1-24
-        switchport mode access
-        switchport access vlan 100
-      exit
     commit
   exit
-exit`;
-    }
-    
-    return `
-# Generated NSO Configuration
-# Intent: ${input}
-# Template: ${template || 'Auto-detected'}
-# Generated: ${timestamp}
+exit
 
-configure
-  # AI-generated configuration will appear here
-  # Based on your natural language input
-  
-  devices device-group all-switches
-    config
-      # Configuration details based on intent
-    commit
-  exit
-exit`;
+`;
+    }
+
+    if (tools.ansible) {
+      config += `
+## Ansible Playbook
+---
+- name: Configure VLAN
+  hosts: switches
+  tasks:
+    - name: Create VLAN 100
+      ios_vlan:
+        vlan_id: 100
+        name: Marketing-VLAN
+        state: present
+
+`;
+    }
+
+    if (tools.terraform) {
+      config += `
+## Terraform Configuration
+resource "ios_vlan" "marketing_vlan" {
+  vlan_id = 100
+  name    = "Marketing-VLAN"
+}
+
+resource "ios_interface" "vlan_interface" {
+  name        = "Vlan100"
+  description = "Marketing Department VLAN"
+  ip_address  = "192.168.100.1/24"
+}
+
+`;
+    }
+
+    if (tools.nornir) {
+      config += `
+## Nornir Script
+from nornir import InitNornir
+from nornir_napalm.plugins.tasks import napalm_configure
+
+def configure_vlan(task):
+    config = '''
+    vlan 100
+    name Marketing-VLAN
+    interface vlan100
+    description Marketing Department VLAN
+    ip address 192.168.100.1 255.255.255.0
+    no shutdown
+    '''
+    task.run(task=napalm_configure, configuration=config)
+
+nr = InitNornir(config_file="config.yaml")
+result = nr.run(task=configure_vlan)
+
+`;
+    }
+
+    return config;
   };
 
   const handleSaveIntent = () => {
@@ -129,7 +191,7 @@ exit`;
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-2">AI Intent Creator</h2>
-        <p className="text-blue-200/70">Describe your network requirements in natural language and let AI generate the NSO configuration</p>
+        <p className="text-blue-200/70">Describe your network requirements in natural language and let AI generate configurations for multiple automation tools</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -142,6 +204,45 @@ exit`;
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Automation Tools Toggle Section */}
+            <div>
+              <label className="text-sm text-blue-200/80 mb-3 block">Automation Tools</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="nso-toggle"
+                    checked={enableNSO}
+                    onCheckedChange={setEnableNSO}
+                  />
+                  <Label htmlFor="nso-toggle" className="text-blue-200/80">NSO</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="ansible-toggle"
+                    checked={enableAnsible}
+                    onCheckedChange={setEnableAnsible}
+                  />
+                  <Label htmlFor="ansible-toggle" className="text-blue-200/80">Ansible</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="terraform-toggle"
+                    checked={enableTerraform}
+                    onCheckedChange={setEnableTerraform}
+                  />
+                  <Label htmlFor="terraform-toggle" className="text-blue-200/80">Terraform</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="nornir-toggle"
+                    checked={enableNornir}
+                    onCheckedChange={setEnableNornir}
+                  />
+                  <Label htmlFor="nornir-toggle" className="text-blue-200/80">Nornir</Label>
+                </div>
+              </div>
+            </div>
+
             {/* Template Selection */}
             <div>
               <label className="text-sm text-blue-200/80 mb-2 block">Configuration Template (Optional)</label>
@@ -194,7 +295,7 @@ exit`;
               disabled={isGenerating}
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
-              {isGenerating ? "Generating Configuration..." : "Generate NSO Configuration"}
+              {isGenerating ? "Generating Configuration..." : "Generate Multi-Tool Configuration"}
             </Button>
           </CardContent>
         </Card>
@@ -206,7 +307,7 @@ exit`;
               <div>
                 <CardTitle className="text-white">Generated Configuration</CardTitle>
                 <CardDescription className="text-blue-200/70">
-                  NSO YANG format configuration ready for deployment
+                  Multi-tool automation configurations ready for deployment
                 </CardDescription>
               </div>
               {generatedConfig && (
@@ -244,7 +345,7 @@ exit`;
             ) : (
               <div className="text-center py-12 text-blue-200/60">
                 <div className="text-lg mb-2">No configuration generated yet</div>
-                <p className="text-sm">Describe your network intent and click generate to see the NSO configuration</p>
+                <p className="text-sm">Describe your network intent and click generate to see the multi-tool configuration</p>
               </div>
             )}
           </CardContent>
