@@ -19,22 +19,45 @@ const Auth = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate('/');
+        }
+      } catch (error) {
+        console.log('Session check failed:', error);
       }
     };
     checkUser();
   }, [navigate]);
+
+  const cleanupAuthState = () => {
+    // Clear any existing auth state
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('Cleanup signout failed, continuing...');
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -45,16 +68,24 @@ const Auth = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Network connection failed. Please check your internet connection and try again.');
+        }
+        throw error;
+      }
 
-      toast({
-        title: "Success!",
-        description: "Please check your email for verification link.",
-      });
+      if (data.user) {
+        toast({
+          title: "Success!",
+          description: "Please check your email for verification link.",
+        });
+      }
     } catch (error: any) {
+      console.error('Sign up error:', error);
       toast({
-        title: "Error",
-        description: error.message || "An error occurred during sign up",
+        title: "Sign Up Error",
+        description: error.message || "An error occurred during sign up. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -67,20 +98,44 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('Cleanup signout failed, continuing...');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Network connection failed. Please check your internet connection and try again.');
+        }
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please check your credentials and try again.');
+        }
+        throw error;
+      }
 
       if (data.user) {
-        navigate('/');
+        toast({
+          title: "Welcome back!",
+          description: "You have been successfully signed in.",
+        });
+        // Force page reload for clean state
+        window.location.href = '/';
       }
     } catch (error: any) {
+      console.error('Sign in error:', error);
       toast({
-        title: "Error",
-        description: error.message || "An error occurred during sign in",
+        title: "Sign In Error",
+        description: error.message || "An error occurred during sign in. Please try again.",
         variant: "destructive",
       });
     } finally {
