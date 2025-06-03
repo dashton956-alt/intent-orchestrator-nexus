@@ -5,18 +5,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNetworkDevices, useNetworkIntents, useMergeRequests } from "@/hooks/useNetworkData";
 import { NetworkTopology } from "@/components/NetworkTopology";
 import { MergeRequestsView } from "@/components/MergeRequestsView";
 import { IntentCreator } from "@/components/IntentCreator";
 import { NetworkMetrics } from "@/components/NetworkMetrics";
 import { IntentStorage } from "@/components/IntentStorage";
+import { LogOut, User } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { user, signOut } = useAuth();
+  const { data: devices } = useNetworkDevices();
+  const { data: intents } = useNetworkIntents();
+  const { data: mergeRequests } = useMergeRequests();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out of your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calculate network health based on real device data
+  const networkHealth = devices ? 
+    (devices.filter(d => d.status === 'online').length / devices.length) * 100 : 98.7;
+
+  const activeIntents = intents?.filter(i => i.status === 'deployed').length || 234;
+  const pendingIntents = intents?.filter(i => i.status === 'pending').length || 13;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -40,6 +67,19 @@ const Index = () => {
               <Badge variant="outline" className="border-blue-400/30 text-blue-400">
                 NSO Ready
               </Badge>
+              <div className="flex items-center space-x-2 text-white">
+                <User className="h-4 w-4" />
+                <span className="text-sm">{user?.email}</span>
+              </div>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
@@ -74,9 +114,12 @@ const Index = () => {
                   <CardTitle className="text-white text-lg">Network Health</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-400 mb-2">98.7%</div>
+                  <div className="text-3xl font-bold text-green-400 mb-2">{networkHealth.toFixed(1)}%</div>
                   <p className="text-blue-200/70 text-sm">Overall Uptime</p>
-                  <Progress value={98.7} className="mt-3" />
+                  <Progress value={networkHealth} className="mt-3" />
+                  <div className="text-xs text-blue-200/60 mt-2">
+                    {devices?.length || 0} devices monitored
+                  </div>
                 </CardContent>
               </Card>
 
@@ -85,24 +128,24 @@ const Index = () => {
                   <CardTitle className="text-white text-lg">Active Intents</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-400 mb-2">247</div>
+                  <div className="text-3xl font-bold text-blue-400 mb-2">{activeIntents}</div>
                   <p className="text-blue-200/70 text-sm">Deployed Configurations</p>
                   <div className="flex items-center justify-between mt-3 text-sm">
-                    <span className="text-green-400">Active: 234</span>
-                    <span className="text-yellow-400">Pending: 13</span>
+                    <span className="text-green-400">Active: {activeIntents}</span>
+                    <span className="text-yellow-400">Pending: {pendingIntents}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-black/20 backdrop-blur-sm border-white/10">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-lg">AI Recommendations</CardTitle>
+                  <CardTitle className="text-white text-lg">Merge Requests</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-400 mb-2">12</div>
-                  <p className="text-blue-200/70 text-sm">Optimization Suggestions</p>
+                  <div className="text-3xl font-bold text-purple-400 mb-2">{mergeRequests?.length || 0}</div>
+                  <p className="text-blue-200/70 text-sm">Pending Reviews</p>
                   <Badge className="mt-3 bg-purple-600/20 text-purple-300 border-purple-400/30">
-                    3 Critical
+                    {mergeRequests?.filter(mr => mr.status === 'review').length || 0} In Review
                   </Badge>
                 </CardContent>
               </Card>

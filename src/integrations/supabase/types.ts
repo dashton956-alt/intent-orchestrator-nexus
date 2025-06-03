@@ -9,7 +9,214 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      merge_requests: {
+        Row: {
+          author_email: string | null
+          change_number: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          intent_id: string | null
+          netbox_mr_id: string | null
+          netbox_url: string | null
+          reviewers: string[] | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_email?: string | null
+          change_number?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          intent_id?: string | null
+          netbox_mr_id?: string | null
+          netbox_url?: string | null
+          reviewers?: string[] | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_email?: string | null
+          change_number?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          intent_id?: string | null
+          netbox_mr_id?: string | null
+          netbox_url?: string | null
+          reviewers?: string[] | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merge_requests_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "network_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_devices: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          last_updated: string | null
+          location: string | null
+          model: string | null
+          name: string
+          netbox_id: number | null
+          nso_device_name: string | null
+          status: string
+          type: string
+          vendor: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          last_updated?: string | null
+          location?: string | null
+          model?: string | null
+          name: string
+          netbox_id?: number | null
+          nso_device_name?: string | null
+          status?: string
+          type: string
+          vendor?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          last_updated?: string | null
+          location?: string | null
+          model?: string | null
+          name?: string
+          netbox_id?: number | null
+          nso_device_name?: string | null
+          status?: string
+          type?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      network_intents: {
+        Row: {
+          approved_by: string | null
+          configuration: string | null
+          created_at: string | null
+          created_by: string | null
+          deployed_at: string | null
+          description: string | null
+          id: string
+          intent_type: string
+          natural_language_input: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          configuration?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          description?: string | null
+          id?: string
+          intent_type: string
+          natural_language_input?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          configuration?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          description?: string | null
+          id?: string
+          intent_type?: string
+          natural_language_input?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      network_metrics: {
+        Row: {
+          device_id: string | null
+          id: string
+          metric_type: string
+          timestamp: string | null
+          unit: string | null
+          value: number | null
+        }
+        Insert: {
+          device_id?: string | null
+          id?: string
+          metric_type: string
+          timestamp?: string | null
+          unit?: string | null
+          value?: number | null
+        }
+        Update: {
+          device_id?: string | null
+          id?: string
+          metric_type?: string
+          timestamp?: string | null
+          unit?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_metrics_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "network_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
