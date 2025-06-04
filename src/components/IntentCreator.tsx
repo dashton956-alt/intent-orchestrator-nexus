@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,18 +7,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { ollamaService } from "@/services/ollamaService";
+import { Brain, Sparkles } from "lucide-react";
 
 export const IntentCreator = () => {
   const [naturalLanguageInput, setNaturalLanguageInput] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [generatedConfig, setGeneratedConfig] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isOllamaConnected, setIsOllamaConnected] = useState(false);
+  const [useAI, setUseAI] = useState(true);
   
   // Toggle states for automation tools
   const [enableNSO, setEnableNSO] = useState(true);
   const [enableAnsible, setEnableAnsible] = useState(false);
   const [enableTerraform, setEnableTerraform] = useState(false);
   const [enableNornir, setEnableNornir] = useState(false);
+
+  useEffect(() => {
+    checkOllamaConnection();
+  }, []);
+
+  const checkOllamaConnection = async () => {
+    const connected = await ollamaService.checkConnection();
+    setIsOllamaConnected(connected);
+  };
 
   const templates = [
     { id: "vlan", name: "VLAN Configuration", description: "Create or modify VLANs" },
@@ -58,8 +71,49 @@ export const IntentCreator = () => {
 
     setIsGenerating(true);
     
-    // Simulate AI processing
-    setTimeout(() => {
+    try {
+      let config;
+      
+      if (useAI && isOllamaConnected) {
+        // Use AI to generate configuration
+        const enabledTools = [];
+        if (enableNSO) enabledTools.push('NSO');
+        if (enableAnsible) enabledTools.push('Ansible');
+        if (enableTerraform) enabledTools.push('Terraform');
+        if (enableNornir) enabledTools.push('Nornir');
+        
+        config = await ollamaService.generateConfiguration(
+          naturalLanguageInput, 
+          selectedTemplate, 
+          enabledTools
+        );
+        
+        toast({
+          title: "AI Configuration Generated",
+          description: "Ollama has successfully generated your network configuration.",
+        });
+      } else {
+        // Fallback to mock configuration
+        config = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
+          nso: enableNSO,
+          ansible: enableAnsible,
+          terraform: enableTerraform,
+          nornir: enableNornir
+        });
+        
+        toast({
+          title: useAI ? "Using Mock Data" : "Intent Generated",
+          description: useAI 
+            ? "Ollama not available, using template-based configuration." 
+            : "Template-based configuration generated successfully.",
+        });
+      }
+      
+      setGeneratedConfig(config);
+    } catch (error) {
+      console.error('Generation failed:', error);
+      
+      // Fallback to mock if AI fails
       const mockConfig = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
         nso: enableNSO,
         ansible: enableAnsible,
@@ -67,13 +121,15 @@ export const IntentCreator = () => {
         nornir: enableNornir
       });
       setGeneratedConfig(mockConfig);
-      setIsGenerating(false);
       
       toast({
-        title: "Intent Generated",
-        description: "AI has successfully converted your request into automation configurations.",
+        title: "Fallback Configuration",
+        description: "AI generation failed, using template-based configuration instead.",
+        variant: "destructive"
       });
-    }, 2000);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const generateMockConfiguration = (input: string, template: string, tools: { nso: boolean, ansible: boolean, terraform: boolean, nornir: boolean }) => {
@@ -189,9 +245,30 @@ result = nr.run(task=configure_vlan)
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-2">AI Intent Creator</h2>
-        <p className="text-blue-200/70">Describe your network requirements in natural language and let AI generate configurations for multiple automation tools</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+            <Brain className="h-7 w-7" />
+            AI Intent Creator
+          </h2>
+          <p className="text-blue-200/70">Describe your network requirements in natural language and let AI generate configurations for multiple automation tools</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge 
+            variant={isOllamaConnected ? "default" : "secondary"}
+            className={isOllamaConnected ? "bg-green-600/20 text-green-300 border-green-400/30" : ""}
+          >
+            {isOllamaConnected ? "AI Ready" : "Template Mode"}
+          </Badge>
+          <Button
+            onClick={checkOllamaConnection}
+            variant="outline"
+            size="sm"
+            className="border-blue-400/30 text-blue-300 hover:bg-blue-600/10"
+          >
+            Check AI
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -204,6 +281,20 @@ result = nr.run(task=configure_vlan)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* AI Toggle */}
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg border border-purple-400/20">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="h-4 w-4 text-purple-400" />
+                <Label htmlFor="ai-toggle" className="text-purple-200">Use AI Generation</Label>
+              </div>
+              <Switch
+                id="ai-toggle"
+                checked={useAI}
+                onCheckedChange={setUseAI}
+                disabled={!isOllamaConnected}
+              />
+            </div>
+
             {/* Automation Tools Toggle Section */}
             <div>
               <label className="text-sm text-blue-200/80 mb-3 block">Automation Tools</label>
@@ -293,9 +384,14 @@ result = nr.run(task=configure_vlan)
             <Button
               onClick={handleGenerateIntent}
               disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              className={`w-full ${
+                useAI && isOllamaConnected 
+                  ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" 
+                  : "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800"
+              }`}
             >
-              {isGenerating ? "Generating Configuration..." : "Generate Multi-Tool Configuration"}
+              {isGenerating ? "Generating Configuration..." : 
+                useAI && isOllamaConnected ? "Generate AI Configuration" : "Generate Template Configuration"}
             </Button>
           </CardContent>
         </Card>
@@ -357,7 +453,7 @@ result = nr.run(task=configure_vlan)
         <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 backdrop-blur-sm border-purple-400/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              🤖 AI Insights
+              🤖 {useAI && isOllamaConnected ? "AI Insights" : "Template Insights"}
             </CardTitle>
           </CardHeader>
           <CardContent>
