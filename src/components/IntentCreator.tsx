@@ -8,14 +8,21 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ollamaService } from "@/services/ollamaService";
-import { Brain, Sparkles } from "lucide-react";
+import { netboxService } from "@/services/netboxService";
+import { nsoService } from "@/services/nsoService";
+import { Brain, Sparkles, Circle } from "lucide-react";
 
 export const IntentCreator = () => {
   const [naturalLanguageInput, setNaturalLanguageInput] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [generatedConfig, setGeneratedConfig] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Connection status states
   const [isOllamaConnected, setIsOllamaConnected] = useState(false);
+  const [isNetboxConnected, setIsNetboxConnected] = useState(false);
+  const [isNsoConnected, setIsNsoConnected] = useState(false);
+  
   const [useAI, setUseAI] = useState(true);
   
   // Toggle states for automation tools
@@ -25,12 +32,45 @@ export const IntentCreator = () => {
   const [enableNornir, setEnableNornir] = useState(false);
 
   useEffect(() => {
-    checkOllamaConnection();
+    checkAllConnections();
   }, []);
+
+  const checkAllConnections = async () => {
+    await Promise.all([
+      checkOllamaConnection(),
+      checkNetboxConnection(),
+      checkNsoConnection()
+    ]);
+  };
 
   const checkOllamaConnection = async () => {
     const connected = await ollamaService.checkConnection();
     setIsOllamaConnected(connected);
+  };
+
+  const checkNetboxConnection = async () => {
+    try {
+      await netboxService.fetchDevices();
+      setIsNetboxConnected(true);
+    } catch (error) {
+      setIsNetboxConnected(false);
+    }
+  };
+
+  const checkNsoConnection = async () => {
+    try {
+      // Add a simple connection check method to NSO service
+      await fetch('http://localhost:8080/restconf/data/', {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Basic ' + btoa('admin:admin'),
+          'Accept': 'application/json',
+        },
+      });
+      setIsNsoConnected(true);
+    } catch (error) {
+      setIsNsoConnected(false);
+    }
   };
 
   const templates = [
@@ -254,6 +294,28 @@ result = nr.run(task=configure_vlan)
           <p className="text-blue-200/70">Describe your network requirements in natural language and let AI generate configurations for multiple automation tools</p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Connection Status Indicators */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Circle 
+                className={`h-3 w-3 ${isOllamaConnected ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'}`}
+              />
+              <span className="text-xs text-blue-200/70">Ollama</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Circle 
+                className={`h-3 w-3 ${isNetboxConnected ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'}`}
+              />
+              <span className="text-xs text-blue-200/70">NetBox</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Circle 
+                className={`h-3 w-3 ${isNsoConnected ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'}`}
+              />
+              <span className="text-xs text-blue-200/70">NSO</span>
+            </div>
+          </div>
+          
           <Badge 
             variant={isOllamaConnected ? "default" : "secondary"}
             className={isOllamaConnected ? "bg-green-600/20 text-green-300 border-green-400/30" : ""}
@@ -261,12 +323,12 @@ result = nr.run(task=configure_vlan)
             {isOllamaConnected ? "AI Ready" : "Template Mode"}
           </Badge>
           <Button
-            onClick={checkOllamaConnection}
+            onClick={checkAllConnections}
             variant="outline"
             size="sm"
             className="border-blue-400/30 text-blue-300 hover:bg-blue-600/10"
           >
-            Check AI
+            Check Connections
           </Button>
         </div>
       </div>
