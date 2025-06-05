@@ -50,6 +50,16 @@ export const ConfigComparison = () => {
     }
   };
 
+  // Transform devices to match the expected interface
+  const transformedDevices = devices.map(device => ({
+    id: device.id,
+    name: device.name,
+    ip_address: String(device.ip_address || ''),
+    status: device.status,
+    vendor: String(device.vendor || ''),
+    model: String(device.model || '')
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -106,7 +116,7 @@ export const ConfigComparison = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {devices.map((device) => (
+                {transformedDevices.map((device) => (
                   <Card key={device.id} className="bg-black/30 border-white/10 hover:border-blue-400/30 transition-colors">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -230,7 +240,7 @@ export const ConfigComparison = () => {
       <ScheduleComparisonDialog
         open={showScheduleDialog}
         onOpenChange={setShowScheduleDialog}
-        devices={devices}
+        devices={transformedDevices}
       />
     </div>
   );
