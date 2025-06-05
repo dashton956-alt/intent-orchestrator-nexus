@@ -12,6 +12,8 @@ interface UseConfigComparisonReturn {
   scheduleComparison: (deviceIds: string[], schedule: string) => Promise<{ id: string; message: string }>;
   getComparisonResult: (comparisonId: string) => Promise<ConfigComparison>;
   refreshHistory: () => void;
+  createBulkSchedule: (scheduleType: 'weekly' | 'monthly' | 'on-change', schedule: string, deviceIds: string[]) => Promise<{ id: string; message: string }>;
+  deleteSchedule: (scheduleId: string) => Promise<void>;
 }
 
 export const useConfigComparison = (): UseConfigComparisonReturn => {
@@ -54,6 +56,27 @@ export const useConfigComparison = (): UseConfigComparisonReturn => {
     }
   }, [handleError, refreshHistory]);
 
+  const createBulkSchedule = useCallback(async (scheduleType: 'weekly' | 'monthly' | 'on-change', schedule: string, deviceIds: string[]) => {
+    try {
+      const result = await configComparisonService.createBulkSchedule(scheduleType, schedule, deviceIds);
+      await refreshHistory();
+      return result;
+    } catch (error) {
+      handleError(error as Error, 'Failed to create bulk schedule');
+      throw error;
+    }
+  }, [handleError, refreshHistory]);
+
+  const deleteSchedule = useCallback(async (scheduleId: string) => {
+    try {
+      await configComparisonService.deleteSchedule(scheduleId);
+      await refreshHistory();
+    } catch (error) {
+      handleError(error as Error, 'Failed to delete schedule');
+      throw error;
+    }
+  }, [handleError, refreshHistory]);
+
   const getComparisonResult = useCallback(async (comparisonId: string): Promise<ConfigComparison> => {
     try {
       return await configComparisonService.getComparisonResults(comparisonId);
@@ -70,6 +93,8 @@ export const useConfigComparison = (): UseConfigComparisonReturn => {
     compareDevice,
     scheduleComparison,
     getComparisonResult,
-    refreshHistory
+    refreshHistory,
+    createBulkSchedule,
+    deleteSchedule
   };
 };

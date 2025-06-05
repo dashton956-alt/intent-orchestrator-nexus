@@ -12,6 +12,7 @@ import { useNetworkDevices } from '@/hooks/useNetworkData';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ConfigDifferencesList } from './ConfigDifferencesList';
 import { ScheduleComparisonDialog } from './ScheduleComparisonDialog';
+import { ScheduleManagement } from './ScheduleManagement';
 
 export const ConfigComparison = () => {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
@@ -82,7 +83,7 @@ export const ConfigComparison = () => {
                 className="border-blue-400/30 text-blue-300 hover:bg-blue-600/10"
               >
                 <Calendar className="h-4 w-4 mr-2" />
-                Schedule
+                Quick Schedule
               </Button>
               <Button
                 onClick={refreshHistory}
@@ -97,9 +98,12 @@ export const ConfigComparison = () => {
       </Card>
 
       <Tabs defaultValue="instant" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-black/20 backdrop-blur-sm border border-white/10">
+        <TabsList className="grid w-full grid-cols-3 bg-black/20 backdrop-blur-sm border border-white/10">
           <TabsTrigger value="instant" className="data-[state=active]:bg-blue-600/30">
             Instant Comparison
+          </TabsTrigger>
+          <TabsTrigger value="schedules" className="data-[state=active]:bg-blue-600/30">
+            Schedule Management
           </TabsTrigger>
           <TabsTrigger value="history" className="data-[state=active]:bg-blue-600/30">
             Comparison History
@@ -152,6 +156,10 @@ export const ConfigComparison = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="schedules" className="mt-6">
+          <ScheduleManagement />
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">

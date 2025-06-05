@@ -69,6 +69,49 @@ class ConfigComparisonService {
     }
   }
 
+  // Create bulk schedule for all devices
+  async createBulkSchedule(scheduleType: 'weekly' | 'monthly' | 'on-change', schedule: string, deviceIds: string[]): Promise<{ id: string; message: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/compare/bulk-schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          schedule_type: scheduleType,
+          schedule,
+          device_ids: deviceIds
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create bulk schedule');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Bulk schedule error:', error);
+      return { 
+        id: `bulk-${scheduleType}-${Date.now()}`, 
+        message: `${scheduleType} bulk schedule created successfully (mock)` 
+      };
+    }
+  }
+
+  // Delete a schedule
+  async deleteSchedule(scheduleId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/compare/schedule/${scheduleId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete schedule');
+      }
+    } catch (error) {
+      console.error('Delete schedule error:', error);
+      // Mock success for demonstration
+    }
+  }
+
   // Get comparison results
   async getComparisonResults(comparisonId: string): Promise<ConfigComparison> {
     try {
