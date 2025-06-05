@@ -4,17 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { netboxService } from "@/services/netboxService";
 import { nsoService } from "@/services/nsoService";
+import { useErrorHandler } from "./useErrorHandler";
+import { useRetry } from "./useRetry";
 
 // Hook to fetch and sync network devices
 export const useNetworkDevices = () => {
+  const { handleError } = useErrorHandler();
+  
   return useQuery({
     queryKey: ['network-devices'],
     queryFn: async () => {
-      // First try to fetch from NetBox and sync
       try {
+        // First try to fetch from NetBox and sync
         await netboxService.fetchDevices();
       } catch (error) {
-        console.log('NetBox sync failed, using local data');
+        console.log('NetBox sync failed, using local data:', error);
+        // Don't throw here, just log and continue with local data
       }
 
       // Then fetch from local database
@@ -23,15 +28,28 @@ export const useNetworkDevices = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        handleError(error, "Failed to fetch network devices");
+        throw error;
+      }
+      
+      return data || [];
     },
     refetchInterval: 30000, // Refresh every 30 seconds
+    retry: (failureCount, error) => {
+      // Don't retry database connection errors
+      if (error?.message?.includes('connection') || error?.message?.includes('network')) {
+        return failureCount < 2;
+      }
+      return failureCount < 3;
+    },
   });
 };
 
 // Hook to fetch network intents
 export const useNetworkIntents = () => {
+  const { handleError } = useErrorHandler();
+  
   return useQuery({
     queryKey: ['network-intents'],
     queryFn: async () => {
@@ -40,24 +58,30 @@ export const useNetworkIntents = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        handleError(error, "Failed to fetch network intents");
+        throw error;
+      }
+      
+      return data || [];
     },
   });
 };
 
 // Hook to fetch merge requests
 export const useMergeRequests = () => {
+  const { handleError } = useErrorHandler();
+  
   return useQuery({
     queryKey: ['merge-requests'],
     queryFn: async () => {
-      // Sync from NetBox first
       try {
+        // Sync from NetBox first
         const netboxMRs = await netboxService.fetchMergeRequests();
         
         // Sync to local database
         for (const mr of netboxMRs) {
-          await supabase
+          const { error } = await supabase
             .from('merge_requests')
             .upsert({
               netbox_mr_id: mr.id,
@@ -66,9 +90,13 @@ export const useMergeRequests = () => {
               status: mr.status,
               author_email: mr.author_email,
             }, { onConflict: 'netbox_mr_id' });
+            
+          if (error) {
+            console.error('Error syncing MR:', error);
+          }
         }
       } catch (error) {
-        console.log('NetBox MR sync failed, using local data');
+        console.log('NetBox MR sync failed, using local data:', error);
       }
 
       // Fetch from local database
@@ -77,8 +105,12 @@ export const useMergeRequests = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        handleError(error, "Failed to fetch merge requests");
+        throw error;
+      }
+      
+      return data || [];
     },
     refetchInterval: 60000, // Refresh every minute
   });
@@ -86,6 +118,8 @@ export const useMergeRequests = () => {
 
 // Hook to fetch network metrics
 export const useNetworkMetrics = () => {
+  const { handleError } = useErrorHandler();
+  
   return useQuery({
     queryKey: ['network-metrics'],
     queryFn: async () => {
@@ -95,8 +129,12 @@ export const useNetworkMetrics = () => {
         .order('timestamp', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        handleError(error, "Failed to fetch network metrics");
+        throw error;
+      }
+      
+      return data || [];
     },
     refetchInterval: 10000, // Refresh every 10 seconds
   });
@@ -105,6 +143,8 @@ export const useNetworkMetrics = () => {
 // Hook to create and deploy network intents
 export const useCreateIntent = () => {
   const [loading, setLoading] = useState(false);
+  const { handleError } = useErrorHandler();
+  const { execute: executeWithRetry } = useRetry({ maxRetries: 2 });
 
   const createIntent = async (intentData: {
     title: string;
@@ -113,34 +153,43 @@ export const useCreateIntent = () => {
     natural_language_input: string;
   }) => {
     setLoading(true);
+    
     try {
-      // Create intent in database
-      const { data: intent, error } = await supabase
-        .from('network_intents')
-        .insert({
-          ...intentData,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .select()
-        .single();
+      return await executeWithRetry(async () => {
+        // Create intent in database
+        const { data: intent, error } = await supabase
+          .from('network_intents')
+          .insert({
+            ...intentData,
+            created_by: (await supabase.auth.getUser()).data.user?.id,
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) {
+          throw new Error(`Failed to create intent: ${error.message}`);
+        }
 
-      // Generate NSO configuration
-      const configuration = await nsoService.generateConfiguration(intent);
-      
-      // Update intent with generated configuration
-      await supabase
-        .from('network_intents')
-        .update({ 
-          configuration,
-          status: 'pending'
-        })
-        .eq('id', intent.id);
+        // Generate NSO configuration
+        const configuration = await nsoService.generateConfiguration(intent);
+        
+        // Update intent with generated configuration
+        const { error: updateError } = await supabase
+          .from('network_intents')
+          .update({ 
+            configuration,
+            status: 'pending'
+          })
+          .eq('id', intent.id);
 
-      return intent;
+        if (updateError) {
+          throw new Error(`Failed to update intent configuration: ${updateError.message}`);
+        }
+
+        return intent;
+      });
     } catch (error) {
-      console.error('Error creating intent:', error);
+      handleError(error as Error, "Failed to create network intent");
       throw error;
     } finally {
       setLoading(false);

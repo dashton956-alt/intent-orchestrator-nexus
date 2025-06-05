@@ -13,14 +13,31 @@ import { MergeRequestsView } from "@/components/MergeRequestsView";
 import { IntentCreator } from "@/components/IntentCreator";
 import { NetworkMetrics } from "@/components/NetworkMetrics";
 import { IntentStorage } from "@/components/IntentStorage";
+import { LoadingCard } from "@/components/LoadingCard";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { LogOut, User } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { user, signOut } = useAuth();
-  const { data: devices } = useNetworkDevices();
-  const { data: intents } = useNetworkIntents();
-  const { data: mergeRequests } = useMergeRequests();
+  
+  const { 
+    data: devices, 
+    isLoading: devicesLoading, 
+    error: devicesError 
+  } = useNetworkDevices();
+  
+  const { 
+    data: intents, 
+    isLoading: intentsLoading, 
+    error: intentsError 
+  } = useNetworkIntents();
+  
+  const { 
+    data: mergeRequests, 
+    isLoading: mergeRequestsLoading, 
+    error: mergeRequestsError 
+  } = useMergeRequests();
 
   const handleSignOut = async () => {
     try {
@@ -39,11 +56,26 @@ const Index = () => {
   };
 
   // Calculate network health based on real device data
-  const networkHealth = devices ? 
+  const networkHealth = devices && devices.length > 0 ? 
     (devices.filter(d => d.status === 'online').length / devices.length) * 100 : 98.7;
 
   const activeIntents = intents?.filter(i => i.status === 'deployed').length || 234;
   const pendingIntents = intents?.filter(i => i.status === 'pending').length || 13;
+
+  // Show loading state for critical data
+  const isInitialLoading = devicesLoading && intentsLoading && mergeRequestsLoading;
+
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <div className="text-white text-xl">Loading Network Dashboard...</div>
+          <div className="text-blue-200/70 text-sm">Fetching network data and configurations</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -109,46 +141,58 @@ const Index = () => {
           <TabsContent value="dashboard" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               {/* Network Health Cards */}
-              <Card className="bg-black/20 backdrop-blur-sm border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-lg">Network Health</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-green-400 mb-2">{networkHealth.toFixed(1)}%</div>
-                  <p className="text-blue-200/70 text-sm">Overall Uptime</p>
-                  <Progress value={networkHealth} className="mt-3" />
-                  <div className="text-xs text-blue-200/60 mt-2">
-                    {devices?.length || 0} devices monitored
-                  </div>
-                </CardContent>
-              </Card>
+              {devicesLoading ? (
+                <LoadingCard />
+              ) : (
+                <Card className="bg-black/20 backdrop-blur-sm border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white text-lg">Network Health</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-green-400 mb-2">{networkHealth.toFixed(1)}%</div>
+                    <p className="text-blue-200/70 text-sm">Overall Uptime</p>
+                    <Progress value={networkHealth} className="mt-3" />
+                    <div className="text-xs text-blue-200/60 mt-2">
+                      {devices?.length || 0} devices monitored
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card className="bg-black/20 backdrop-blur-sm border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-lg">Active Intents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-blue-400 mb-2">{activeIntents}</div>
-                  <p className="text-blue-200/70 text-sm">Deployed Configurations</p>
-                  <div className="flex items-center justify-between mt-3 text-sm">
-                    <span className="text-green-400">Active: {activeIntents}</span>
-                    <span className="text-yellow-400">Pending: {pendingIntents}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              {intentsLoading ? (
+                <LoadingCard />
+              ) : (
+                <Card className="bg-black/20 backdrop-blur-sm border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white text-lg">Active Intents</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-blue-400 mb-2">{activeIntents}</div>
+                    <p className="text-blue-200/70 text-sm">Deployed Configurations</p>
+                    <div className="flex items-center justify-between mt-3 text-sm">
+                      <span className="text-green-400">Active: {activeIntents}</span>
+                      <span className="text-yellow-400">Pending: {pendingIntents}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card className="bg-black/20 backdrop-blur-sm border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-lg">Merge Requests</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-purple-400 mb-2">{mergeRequests?.length || 0}</div>
-                  <p className="text-blue-200/70 text-sm">Pending Reviews</p>
-                  <Badge className="mt-3 bg-purple-600/20 text-purple-300 border-purple-400/30">
-                    {mergeRequests?.filter(mr => mr.status === 'review').length || 0} In Review
-                  </Badge>
-                </CardContent>
-              </Card>
+              {mergeRequestsLoading ? (
+                <LoadingCard />
+              ) : (
+                <Card className="bg-black/20 backdrop-blur-sm border-white/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white text-lg">Merge Requests</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-purple-400 mb-2">{mergeRequests?.length || 0}</div>
+                    <p className="text-blue-200/70 text-sm">Pending Reviews</p>
+                    <Badge className="mt-3 bg-purple-600/20 text-purple-300 border-purple-400/30">
+                      {mergeRequests?.filter(mr => mr.status === 'review').length || 0} In Review
+                    </Badge>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Network Topology */}
