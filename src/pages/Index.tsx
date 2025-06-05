@@ -13,6 +13,7 @@ import { MergeRequestsView } from "@/components/MergeRequestsView";
 import { IntentCreator } from "@/components/IntentCreator";
 import { NetworkMetrics } from "@/components/NetworkMetrics";
 import { IntentStorage } from "@/components/IntentStorage";
+import { ConfigComparison } from "@/components/ConfigComparison";
 import { LoadingCard } from "@/components/LoadingCard";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { LogOut, User } from "lucide-react";
