@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -121,7 +120,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10">
+          <TabsList className="grid w-full grid-cols-6 bg-black/20 backdrop-blur-sm border border-white/10">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600/30">
               Dashboard
             </TabsTrigger>
@@ -133,6 +132,9 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="intents" className="data-[state=active]:bg-blue-600/30">
               Intent Storage
+            </TabsTrigger>
+            <TabsTrigger value="config-comparison" className="data-[state=active]:bg-blue-600/30">
+              Config Comparison
             </TabsTrigger>
             <TabsTrigger value="monitoring" className="data-[state=active]:bg-blue-600/30">
               Network Monitoring
@@ -244,6 +246,10 @@ const Index = () => {
 
           <TabsContent value="intents" className="mt-6">
             <IntentStorage />
+          </TabsContent>
+
+          <TabsContent value="config-comparison" className="mt-6">
+            <ConfigComparison />
           </TabsContent>
 
           <TabsContent value="monitoring" className="mt-6">
