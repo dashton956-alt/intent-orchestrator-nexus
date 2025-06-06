@@ -1,5 +1,4 @@
-
-import { netboxService } from "./netboxService";
+import { getEndpoints } from '@/config/endpoints';
 
 export interface NetBoxVariable {
   name: string;
@@ -59,22 +58,18 @@ export interface NetBoxVLAN {
 }
 
 class NetBoxGraphQLService {
-  private baseUrl: string;
-  private apiToken: string;
-  private graphqlUrl: string;
+  private endpoints = getEndpoints();
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_NETBOX_API_URL || "https://your-netbox-instance.com/api";
-    this.apiToken = import.meta.env.VITE_NETBOX_API_TOKEN || "YOUR_NETBOX_TOKEN_HERE";
-    this.graphqlUrl = import.meta.env.VITE_NETBOX_GRAPHQL_URL || "https://your-netbox-instance.com/graphql/";
+    // Configuration is now handled by the centralized endpoints config
   }
 
   private async makeGraphQLQuery(query: string, variables?: Record<string, any>) {
     try {
-      const response = await fetch(this.graphqlUrl, {
+      const response = await fetch(this.endpoints.NETBOX.GRAPHQL_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${this.apiToken}`,
+          'Authorization': `Token ${this.endpoints.NETBOX.API_TOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -102,7 +97,7 @@ class NetBoxGraphQLService {
 
   private async makeRestAPICall(endpoint: string, params?: Record<string, any>) {
     try {
-      const url = new URL(`${this.baseUrl}${endpoint}`);
+      const url = new URL(`${this.endpoints.NETBOX.API_BASE_URL}${endpoint}`);
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -113,7 +108,7 @@ class NetBoxGraphQLService {
 
       const response = await fetch(url.toString(), {
         headers: {
-          'Authorization': `Token ${this.apiToken}`,
+          'Authorization': `Token ${this.endpoints.NETBOX.API_TOKEN}`,
           'Content-Type': 'application/json',
         },
       });
