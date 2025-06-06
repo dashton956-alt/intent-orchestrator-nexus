@@ -16,6 +16,7 @@ import { ConfigComparison } from "@/components/ConfigComparison";
 import { LoadingCard } from "@/components/LoadingCard";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { LogOut, User } from "lucide-react";
+import { AIOptimization } from "@/components/AIOptimization";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -136,6 +137,9 @@ const Index = () => {
             <TabsTrigger value="config-comparison" className="data-[state=active]:bg-blue-600/30">
               Config Comparison
             </TabsTrigger>
+            <TabsTrigger value="ai-optimization" className="data-[state=active]:bg-blue-600/30">
+              AI Optimization
+            </TabsTrigger>
             <TabsTrigger value="monitoring" className="data-[state=active]:bg-blue-600/30">
               Network Monitoring
             </TabsTrigger>
@@ -227,7 +231,7 @@ const Index = () => {
                 Review Merge Requests
               </Button>
               <Button 
-                onClick={() => toast({ title: "Feature Coming Soon", description: "AI optimization will be available in the next release." })}
+                onClick={() => setActiveTab("ai-optimization")}
                 variant="outline" 
                 className="h-16 border-purple-400/30 text-purple-300 hover:bg-purple-600/10"
               >
@@ -250,6 +254,10 @@ const Index = () => {
 
           <TabsContent value="config-comparison" className="mt-6">
             <ConfigComparison />
+          </TabsContent>
+
+          <TabsContent value="ai-optimization" className="mt-6">
+            <AIOptimization />
           </TabsContent>
 
           <TabsContent value="monitoring" className="mt-6">
