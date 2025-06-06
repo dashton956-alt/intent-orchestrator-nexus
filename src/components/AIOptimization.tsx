@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAIOptimization } from "@/hooks/useAIOptimization";
-import { Brain, TrendingUp, Shield, Zap, AlertTriangle, CheckCircle } from "lucide-react";
+import { Brain, TrendingUp, Shield, Zap, AlertTriangle, CheckCircle, Database, Network } from "lucide-react";
 
 export const AIOptimization = () => {
   const { 
@@ -47,23 +47,23 @@ export const AIOptimization = () => {
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Brain className="h-5 w-5 text-purple-400" />
-            AI Network Optimization
+            AI Network & NetBox Optimization
           </CardTitle>
           <CardDescription className="text-blue-200/70">
-            Intelligent analysis and recommendations for your network infrastructure
+            Comprehensive analysis of network performance, security, and NetBox configuration
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!analysis && !isAnalyzing && (
             <div className="text-center py-8">
               <Brain className="h-16 w-16 text-purple-400 mx-auto mb-4" />
-              <p className="text-white mb-4">Ready to analyze your network</p>
+              <p className="text-white mb-4">Ready to analyze your network and NetBox configuration</p>
               <Button 
                 onClick={runOptimization}
                 className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
               >
                 <Brain className="h-4 w-4 mr-2" />
-                Start AI Analysis
+                Start Comprehensive Analysis
               </Button>
             </div>
           )}
@@ -71,14 +71,14 @@ export const AIOptimization = () => {
           {isAnalyzing && (
             <div className="text-center py-8">
               <LoadingSpinner size="lg" />
-              <p className="text-white mt-4">Analyzing network data with AI...</p>
+              <p className="text-white mt-4">Analyzing network and NetBox data with AI...</p>
               <p className="text-blue-200/70 text-sm mt-2">This may take a few moments</p>
             </div>
           )}
 
           {analysis && (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-black/20 backdrop-blur-sm border border-white/10">
+              <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-purple-600/30">
                   Overview
                 </TabsTrigger>
@@ -88,13 +88,16 @@ export const AIOptimization = () => {
                 <TabsTrigger value="security" className="data-[state=active]:bg-purple-600/30">
                   Security
                 </TabsTrigger>
+                <TabsTrigger value="netbox" className="data-[state=active]:bg-purple-600/30">
+                  NetBox
+                </TabsTrigger>
                 <TabsTrigger value="recommendations" className="data-[state=active]:bg-purple-600/30">
                   Actions
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-400/30">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2">
@@ -112,6 +115,16 @@ export const AIOptimization = () => {
                         <span className="text-white font-medium">Security Score</span>
                       </div>
                       <div className="text-2xl font-bold text-green-400 mt-2">{analysis.securityScore}/100</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-400/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Database className="h-5 w-5 text-orange-400" />
+                        <span className="text-white font-medium">NetBox Score</span>
+                      </div>
+                      <div className="text-2xl font-bold text-orange-400 mt-2">{analysis.netboxScore}/100</div>
                     </CardContent>
                   </Card>
 
@@ -184,6 +197,45 @@ export const AIOptimization = () => {
                 </Card>
               </TabsContent>
 
+              <TabsContent value="netbox" className="mt-6">
+                <Card className="bg-black/20 backdrop-blur-sm border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white">NetBox Configuration Analysis</CardTitle>
+                    <CardDescription className="text-blue-200/70">
+                      Issues and improvements for your NetBox IPAM/DCIM configuration
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {analysis.netboxIssues?.map((issue, index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                          <Database className="h-5 w-5 text-orange-400 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-white font-medium">{issue.title}</span>
+                              <Badge className="bg-blue-600/20 text-blue-300 border-blue-400/30">
+                                {issue.category}
+                              </Badge>
+                            </div>
+                            <div className="text-orange-200/80 text-sm mb-2">{issue.description}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-orange-600/20 text-orange-300 border-orange-400/30">
+                                Severity: {issue.severity}
+                              </Badge>
+                              {issue.affectedObjects.length > 0 && (
+                                <div className="text-xs text-blue-200/60">
+                                  Affects: {issue.affectedObjects.join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))} 
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="recommendations" className="mt-6">
                 <div className="space-y-4">
                   {analysis.recommendations.map((rec, index) => (
@@ -192,10 +244,19 @@ export const AIOptimization = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-green-400" />
+                              {rec.category === 'NetBox' ? (
+                                <Database className="h-5 w-5 text-orange-400" />
+                              ) : rec.category === 'Security' ? (
+                                <Shield className="h-5 w-5 text-green-400" />
+                              ) : (
+                                <CheckCircle className="h-5 w-5 text-green-400" />
+                              )}
                               <span className="text-white font-medium">{rec.title}</span>
                               <Badge className="bg-purple-600/20 text-purple-300 border-purple-400/30">
                                 {rec.priority}
+                              </Badge>
+                              <Badge className="bg-blue-600/20 text-blue-300 border-blue-400/30">
+                                {rec.category}
                               </Badge>
                             </div>
                             <div className="text-blue-200/80 text-sm mt-2">{rec.description}</div>

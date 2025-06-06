@@ -1,4 +1,3 @@
-
 interface OllamaResponse {
   model: string;
   created_at: string;
@@ -89,6 +88,38 @@ class OllamaService {
     }
   }
 
+  async analyzeNetworkWithNetBox(metrics: any[], devices: any[], intents: any[], netboxData: any): Promise<string> {
+    const prompt = this.buildNetBoxAnalyticsPrompt(metrics, devices, intents, netboxData);
+    
+    try {
+      const response = await fetch(`${this.baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.defaultModel,
+          prompt,
+          stream: false,
+          options: {
+            temperature: 0.4,
+            top_p: 0.8,
+          }
+        } as OllamaRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.status}`);
+      }
+
+      const data: OllamaResponse = await response.json();
+      return data.response;
+    } catch (error) {
+      console.error('Error analyzing network data with NetBox:', error);
+      throw new Error('Failed to analyze network data with NetBox using AI.');
+    }
+  }
+
   private buildConfigurationPrompt(input: string, template: string, enabledTools: string[]): string {
     return `You are a network automation expert. Generate configuration code for the following tools: ${enabledTools.join(', ')}.
 
@@ -141,6 +172,79 @@ Please provide:
 6. **Configuration Quality**: Assessment of recent intent implementations
 
 Format your response in clear sections with specific, actionable recommendations.`;
+  }
+
+  private buildNetBoxAnalyticsPrompt(metrics: any[], devices: any[], intents: any[], netboxData: any): string {
+    const metricsCount = metrics.length;
+    const devicesCount = devices.length;
+    const intentsCount = intents.length;
+    const netboxDevicesCount = netboxData.deviceCount;
+    const sitesCount = netboxData.siteCount;
+    const vlansCount = netboxData.vlanCount;
+    
+    const recentMetrics = metrics.slice(0, 10);
+    const recentIntents = intents.slice(0, 5);
+    const netboxDevices = netboxData.devices.slice(0, 10);
+    const netboxSites = netboxData.sites.slice(0, 5);
+
+    return `You are a network analytics expert with specialized knowledge in NetBox IPAM/DCIM systems. Analyze the following comprehensive network and NetBox data to provide actionable insights and recommendations.
+
+Network Overview:
+- Live Network Devices: ${devicesCount}
+- Network Metrics: ${metricsCount} data points
+- Active Intents: ${intentsCount} configurations
+
+NetBox IPAM/DCIM Overview:
+- NetBox Devices: ${netboxDevicesCount}
+- Sites: ${sitesCount}
+- VLANs: ${vlansCount}
+
+Recent Performance Data:
+${JSON.stringify(recentMetrics, null, 2)}
+
+Recent Configuration Intents:
+${JSON.stringify(recentIntents, null, 2)}
+
+NetBox Device Sample:
+${JSON.stringify(netboxDevices, null, 2)}
+
+NetBox Sites Sample:
+${JSON.stringify(netboxSites, null, 2)}
+
+Please provide comprehensive analysis including:
+
+**Network Performance Analysis:**
+1. Performance trends and bottlenecks
+2. Configuration drift detection
+3. Capacity utilization patterns
+
+**Security Assessment:**
+1. Vulnerability identification
+2. Compliance gaps
+3. Access control recommendations
+
+**NetBox Configuration Analysis:**
+1. **Data Quality Issues**: Missing or incomplete device information, IP assignments, relationships
+2. **Documentation Gaps**: Incomplete device descriptions, missing cable connections, rack assignments
+3. **IP Address Management**: Overlapping subnets, unused IP ranges, missing reservations
+4. **VLAN Management**: Unused VLANs, missing VLAN assignments, inconsistent VLAN usage
+5. **Device Relationships**: Missing or incorrect rack assignments, cable connections, power connections
+6. **Naming Standards**: Inconsistent device/interface naming conventions
+7. **Site Management**: Missing location details, incomplete site hierarchies
+8. **Custom Fields**: Underutilized custom fields that could improve documentation
+
+**NetBox Best Practices Recommendations:**
+1. Data consistency improvements
+2. Automation opportunities
+3. Integration enhancements with live network
+4. Reporting and compliance improvements
+
+**Cross-System Analysis:**
+1. Discrepancies between live network and NetBox documentation
+2. Configuration drift between intended (NetBox) and actual (live) state
+3. Opportunities for automated synchronization
+
+Format your response with clear sections and specific, actionable recommendations for both network operations and NetBox configuration improvements.`;
   }
 
   async checkConnection(): Promise<boolean> {
