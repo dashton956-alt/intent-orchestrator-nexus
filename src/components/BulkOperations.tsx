@@ -115,12 +115,12 @@ export const BulkOperations = () => {
 
   const getSuccessfulIntentsText = (): string => {
     if (!results || results.successful.length === 0) return 'None';
-    return results.successful.map(id => getIntentTitle(id)).join(', ');
+    return results.successful.map((id: string) => getIntentTitle(id)).join(', ');
   };
 
   const getFailedIntentsText = (): string => {
     if (!results || results.failed.length === 0) return 'None';
-    return results.failed.map(id => getIntentTitle(id)).join(', ');
+    return results.failed.map((id: string) => getIntentTitle(id)).join(', ');
   };
 
   return (
