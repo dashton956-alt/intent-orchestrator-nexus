@@ -113,6 +113,16 @@ export const BulkOperations = () => {
     device.status === 'online'
   ) || [];
 
+  const getSuccessfulIntentsText = (): string => {
+    if (!results || results.successful.length === 0) return 'None';
+    return results.successful.map(id => getIntentTitle(id)).join(', ');
+  };
+
+  const getFailedIntentsText = (): string => {
+    if (!results || results.failed.length === 0) return 'None';
+    return results.failed.map(id => getIntentTitle(id)).join(', ');
+  };
+
   return (
     <Card className="bg-slate-900 border-white/20">
       <CardHeader>
@@ -215,10 +225,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.successful.length}</div>
                 <div className="text-sm text-green-300">
-                  {results.successful.length > 0 
-                    ? results.successful.map(id => getIntentTitle(id)).join(', ')
-                    : 'None'
-                  }
+                  {getSuccessfulIntentsText()}
                 </div>
               </div>
               
@@ -229,10 +236,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.failed.length}</div>
                 <div className="text-sm text-red-300">
-                  {results.failed.length > 0 
-                    ? results.failed.map(id => getIntentTitle(id)).join(', ')
-                    : 'None'
-                  }
+                  {getFailedIntentsText()}
                 </div>
               </div>
             </div>
