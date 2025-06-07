@@ -85,22 +85,22 @@ export const BulkOperations = () => {
     }
   };
 
-  const getIntentTitle = (intentId: string) => {
+  const getIntentTitle = (intentId: string): string => {
     const intent = intents?.find(i => i.id === intentId);
     return intent?.title || 'Unknown Intent';
   };
 
-  const getDeviceName = (deviceId: string) => {
+  const getDeviceName = (deviceId: string): string => {
     const device = devices?.find(d => d.id === deviceId);
     return device?.name || 'Unknown Device';
   };
 
-  const getIntentStatus = (intentId: string) => {
+  const getIntentStatus = (intentId: string): string => {
     const intent = intents?.find(i => i.id === intentId);
     return intent?.status || 'unknown';
   };
 
-  const getDeviceStatus = (deviceId: string) => {
+  const getDeviceStatus = (deviceId: string): string => {
     const device = devices?.find(d => d.id === deviceId);
     return device?.status || 'unknown';
   };
@@ -215,7 +215,10 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.successful.length}</div>
                 <div className="text-sm text-green-300">
-                  {results.successful.map(id => getIntentTitle(id)).join(', ') || 'None'}
+                  {results.successful.length > 0 
+                    ? results.successful.map(id => getIntentTitle(id)).join(', ')
+                    : 'None'
+                  }
                 </div>
               </div>
               
@@ -226,7 +229,10 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.failed.length}</div>
                 <div className="text-sm text-red-300">
-                  {results.failed.map(id => getIntentTitle(id)).join(', ') || 'None'}
+                  {results.failed.length > 0 
+                    ? results.failed.map(id => getIntentTitle(id)).join(', ')
+                    : 'None'
+                  }
                 </div>
               </div>
             </div>
