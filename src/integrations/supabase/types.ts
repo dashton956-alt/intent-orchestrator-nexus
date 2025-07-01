@@ -9,6 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      configuration_snapshots: {
+        Row: {
+          configuration_data: Json
+          configuration_hash: string
+          created_at: string | null
+          device_id: string
+          id: string
+          intent_id: string | null
+          snapshot_type: string | null
+        }
+        Insert: {
+          configuration_data: Json
+          configuration_hash: string
+          created_at?: string | null
+          device_id: string
+          id?: string
+          intent_id?: string | null
+          snapshot_type?: string | null
+        }
+        Update: {
+          configuration_data?: Json
+          configuration_hash?: string
+          created_at?: string | null
+          device_id?: string
+          id?: string
+          intent_id?: string | null
+          snapshot_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuration_snapshots_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "network_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configuration_snapshots_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "network_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merge_requests: {
         Row: {
           author_email: string | null
@@ -55,6 +136,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "merge_requests_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "network_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string | null
+          description: string | null
+          device_id: string | null
+          id: string
+          intent_id: string | null
+          metric_value: number | null
+          resolved_at: string | null
+          severity: string
+          status: string | null
+          threshold_value: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string | null
+          description?: string | null
+          device_id?: string | null
+          id?: string
+          intent_id?: string | null
+          metric_value?: number | null
+          resolved_at?: string | null
+          severity: string
+          status?: string | null
+          threshold_value?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string | null
+          description?: string | null
+          device_id?: string | null
+          id?: string
+          intent_id?: string | null
+          metric_value?: number | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string | null
+          threshold_value?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_alerts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "network_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "network_alerts_intent_id_fkey"
             columns: ["intent_id"]
             isOneToOne: false
             referencedRelation: "network_intents"
@@ -187,6 +337,53 @@ export type Database = {
           },
         ]
       }
+      performance_thresholds: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          critical_threshold: number
+          device_id: string | null
+          enabled: boolean | null
+          id: string
+          metric_type: string
+          operator: string | null
+          updated_at: string | null
+          warning_threshold: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          critical_threshold: number
+          device_id?: string | null
+          enabled?: boolean | null
+          id?: string
+          metric_type: string
+          operator?: string | null
+          updated_at?: string | null
+          warning_threshold: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          critical_threshold?: number
+          device_id?: string | null
+          enabled?: boolean | null
+          id?: string
+          metric_type?: string
+          operator?: string | null
+          updated_at?: string | null
+          warning_threshold?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_thresholds_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "network_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -217,15 +414,75 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          dashboard_layout: Json | null
+          id: string
+          notification_settings: Json | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "engineer" | "viewer" | "approver"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -340,6 +597,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "engineer", "viewer", "approver"],
+    },
   },
 } as const
