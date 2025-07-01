@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,9 +114,13 @@ export const BulkOperations = () => {
 
   const getSuccessfulIntentsText = (): string => {
     if (!results || results.successful.length === 0) return 'None';
+    
     const titles = results.successful
       .filter((id): id is string => typeof id === 'string' && id.length > 0)
-      .map((id: string) => getIntentTitle(id))
+      .map((id: string) => {
+        const title = getIntentTitle(id);
+        return title;
+      })
       .filter((title): title is string => typeof title === 'string' && title !== 'Unknown Intent' && title.length > 0);
     
     return titles.length > 0 ? titles.join(', ') : 'None';
@@ -125,9 +128,13 @@ export const BulkOperations = () => {
 
   const getFailedIntentsText = (): string => {
     if (!results || results.failed.length === 0) return 'None';
+    
     const titles = results.failed
       .filter((id): id is string => typeof id === 'string' && id.length > 0)
-      .map((id: string) => getIntentTitle(id))
+      .map((id: string) => {
+        const title = getIntentTitle(id);
+        return title;
+      })
       .filter((title): title is string => typeof title === 'string' && title !== 'Unknown Intent' && title.length > 0);
     
     return titles.length > 0 ? titles.join(', ') : 'None';
