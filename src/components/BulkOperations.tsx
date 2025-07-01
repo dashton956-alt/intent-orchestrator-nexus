@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,12 +112,12 @@ export const BulkOperations = () => {
     device.status === 'online'
   ) || [];
 
-  const getSuccessfulResult = (): string => {
+  const getSuccessfulIntentsText = (): string => {
     if (!results || results.successful.length === 0) return 'Fail';
     return 'Pass';
   };
 
-  const getFailedResult = (): string => {
+  const getFailedIntentsText = (): string => {
     if (!results || results.failed.length === 0) return 'Pass';
     return 'Fail';
   };
@@ -194,7 +193,7 @@ export const BulkOperations = () => {
                         ? 'bg-green-600' 
                         : 'bg-red-600'
                     }`}>
-                      {device.status}
+                      {String(device.status)}
                     </Badge>
                   </div>
                 ))}
@@ -225,7 +224,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.successful.length}</div>
                 <div className="text-sm text-green-300">
-                  {getSuccessfulResult()}
+                  {getSuccessfulIntentsText()}
                 </div>
               </div>
               
@@ -236,7 +235,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.failed.length}</div>
                 <div className="text-sm text-red-300">
-                  {getFailedResult()}
+                  {getFailedIntentsText()}
                 </div>
               </div>
             </div>
