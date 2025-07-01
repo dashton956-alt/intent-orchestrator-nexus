@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,32 +112,14 @@ export const BulkOperations = () => {
     device.status === 'online'
   ) || [];
 
-  const getSuccessfulIntentsText = (): string => {
-    if (!results || results.successful.length === 0) return 'None';
-    
-    const titles = results.successful
-      .filter((id): id is string => typeof id === 'string' && id.length > 0)
-      .map((id: string) => {
-        const title = getIntentTitle(id);
-        return title;
-      })
-      .filter((title): title is string => typeof title === 'string' && title !== 'Unknown Intent' && title.length > 0);
-    
-    return titles.length > 0 ? titles.join(', ') : 'None';
+  const getSuccessfulResult = (): string => {
+    if (!results || results.successful.length === 0) return 'Fail';
+    return 'Pass';
   };
 
-  const getFailedIntentsText = (): string => {
-    if (!results || results.failed.length === 0) return 'None';
-    
-    const titles = results.failed
-      .filter((id): id is string => typeof id === 'string' && id.length > 0)
-      .map((id: string) => {
-        const title = getIntentTitle(id);
-        return title;
-      })
-      .filter((title): title is string => typeof title === 'string' && title !== 'Unknown Intent' && title.length > 0);
-    
-    return titles.length > 0 ? titles.join(', ') : 'None';
+  const getFailedResult = (): string => {
+    if (!results || results.failed.length === 0) return 'Pass';
+    return 'Fail';
   };
 
   return (
@@ -243,7 +224,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.successful.length}</div>
                 <div className="text-sm text-green-300">
-                  {String(getSuccessfulIntentsText())}
+                  {getSuccessfulResult()}
                 </div>
               </div>
               
@@ -254,7 +235,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.failed.length}</div>
                 <div className="text-sm text-red-300">
-                  {String(getFailedIntentsText())}
+                  {getFailedResult()}
                 </div>
               </div>
             </div>
