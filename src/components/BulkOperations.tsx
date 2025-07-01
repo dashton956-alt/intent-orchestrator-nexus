@@ -87,31 +87,31 @@ export const BulkOperations = () => {
 
   const getIntentTitle = (intentId: string): string => {
     const intent = intents?.find(i => i.id === intentId);
-    return intent?.title ?? 'Unknown Intent';
+    return intent?.title || 'Unknown Intent';
   };
 
   const getDeviceName = (deviceId: string): string => {
     const device = devices?.find(d => d.id === deviceId);
-    return device?.name ?? 'Unknown Device';
+    return device?.name || 'Unknown Device';
   };
 
   const getIntentStatus = (intentId: string): string => {
     const intent = intents?.find(i => i.id === intentId);
-    return intent?.status ?? 'unknown';
+    return intent?.status || 'unknown';
   };
 
   const getDeviceStatus = (deviceId: string): string => {
     const device = devices?.find(d => d.id === deviceId);
-    return device?.status ?? 'unknown';
+    return device?.status || 'unknown';
   };
 
   const eligibleIntents = intents?.filter(intent => 
     intent.status === 'approved' || intent.status === 'pending'
-  ) ?? [];
+  ) || [];
 
   const onlineDevices = devices?.filter(device => 
     device.status === 'online'
-  ) ?? [];
+  ) || [];
 
   const getSuccessfulIntentsText = (): string => {
     if (!results || results.successful.length === 0) return 'None';
