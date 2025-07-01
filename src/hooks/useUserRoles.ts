@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from './use-toast';
 
 export type UserRole = 'admin' | 'engineer' | 'viewer' | 'approver';
@@ -33,6 +33,10 @@ export const useUserRoles = () => {
     },
     enabled: !!user,
   });
+
+  const hasRole = (role: UserRole): boolean => {
+    return userRoles?.some(r => r.role === role) ?? false;
+  };
 
   const { data: allUserRoles } = useQuery({
     queryKey: ['all-user-roles'],
@@ -107,10 +111,6 @@ export const useUserRoles = () => {
       });
     },
   });
-
-  const hasRole = (role: UserRole): boolean => {
-    return userRoles?.some(r => r.role === role) ?? false;
-  };
 
   const getRoles = (): UserRole[] => {
     return userRoles?.map(r => r.role) ?? [];
