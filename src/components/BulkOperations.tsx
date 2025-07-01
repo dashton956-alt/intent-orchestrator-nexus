@@ -115,20 +115,22 @@ export const BulkOperations = () => {
 
   const getSuccessfulIntentsText = (): string => {
     if (!results || results.successful.length === 0) return 'None';
-    return results.successful
+    const titles = results.successful
       .filter((id): id is string => typeof id === 'string' && id.length > 0)
       .map((id: string) => getIntentTitle(id))
-      .filter((title): title is string => typeof title === 'string' && title.length > 0)
-      .join(', ');
+      .filter((title): title is string => typeof title === 'string' && title !== 'Unknown Intent' && title.length > 0);
+    
+    return titles.length > 0 ? titles.join(', ') : 'None';
   };
 
   const getFailedIntentsText = (): string => {
     if (!results || results.failed.length === 0) return 'None';
-    return results.failed
+    const titles = results.failed
       .filter((id): id is string => typeof id === 'string' && id.length > 0)
       .map((id: string) => getIntentTitle(id))
-      .filter((title): title is string => typeof title === 'string' && title.length > 0)
-      .join(', ');
+      .filter((title): title is string => typeof title === 'string' && title !== 'Unknown Intent' && title.length > 0);
+    
+    return titles.length > 0 ? titles.join(', ') : 'None';
   };
 
   return (
