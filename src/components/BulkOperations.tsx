@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,11 +157,11 @@ export const BulkOperations = () => {
                       <div className="text-xs text-blue-200/70">{intent.intent_type}</div>
                     </div>
                     <Badge className={`text-xs ${
-                      getIntentStatus(intent.id) === 'approved' 
+                      intent.status === 'approved' 
                         ? 'bg-green-600' 
                         : 'bg-yellow-600'
                     }`}>
-                      {getIntentStatus(intent.id)}
+                      {intent.status}
                     </Badge>
                   </div>
                 ))}
@@ -189,11 +190,11 @@ export const BulkOperations = () => {
                       <div className="text-xs text-blue-200/70">{device.ip_address}</div>
                     </div>
                     <Badge className={`text-xs ${
-                      getDeviceStatus(device.id) === 'online' 
+                      device.status === 'online' 
                         ? 'bg-green-600' 
                         : 'bg-red-600'
                     }`}>
-                      {getDeviceStatus(device.id)}
+                      {device.status}
                     </Badge>
                   </div>
                 ))}
