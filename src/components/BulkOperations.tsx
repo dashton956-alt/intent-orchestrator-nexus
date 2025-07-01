@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -242,7 +243,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.successful.length}</div>
                 <div className="text-sm text-green-300">
-                  {getSuccessfulIntentsText()}
+                  {String(getSuccessfulIntentsText())}
                 </div>
               </div>
               
@@ -253,7 +254,7 @@ export const BulkOperations = () => {
                 </div>
                 <div className="text-2xl text-white font-bold">{results.failed.length}</div>
                 <div className="text-sm text-red-300">
-                  {getFailedIntentsText()}
+                  {String(getFailedIntentsText())}
                 </div>
               </div>
             </div>
