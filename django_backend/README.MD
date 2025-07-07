@@ -20,7 +20,7 @@ python manage.py createsuperuser
 python manage.py runserver
 
 
-#Or use Docker:
+# Or use Docker:
 
 
 docker-compose up
