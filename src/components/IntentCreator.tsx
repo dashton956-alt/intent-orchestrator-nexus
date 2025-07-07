@@ -30,8 +30,7 @@ export const IntentCreator = () => {
   const [useAI, setUseAI] = useState(true);
   const [useNetBoxLookup, setUseNetBoxLookup] = useState(true);
   
-  // Toggle states for automation tools
-  const [enableNSO, setEnableNSO] = useState(true);
+  // Toggle states for automation tools (removed enableNSO)
   const [enableAnsible, setEnableAnsible] = useState(false);
   const [enableTerraform, setEnableTerraform] = useState(false);
   const [enableNornir, setEnableNornir] = useState(false);
@@ -94,7 +93,6 @@ export const IntentCreator = () => {
     "Configure OSPF on core switches with area 0"
   ];
 
-  // Parse intent context from natural language input
   const parseIntentContext = (input: string) => {
     const context: any = {};
     
@@ -149,11 +147,11 @@ export const IntentCreator = () => {
       return;
     }
 
-    // Check if at least one automation tool is enabled
-    if (!enableNSO && !enableAnsible && !enableTerraform && !enableNornir) {
+    // Check if at least one automation tool is enabled (removed NSO check)
+    if (!enableAnsible && !enableTerraform && !enableNornir) {
       toast({
         title: "Automation Tool Required",
-        description: "Please enable at least one automation tool (NSO, Ansible, Terraform, or Nornir).",
+        description: "Please enable at least one automation tool (Ansible, Terraform, or Nornir).",
         variant: "destructive"
       });
       return;
@@ -161,13 +159,13 @@ export const IntentCreator = () => {
 
     setIsGenerating(true);
     
+
     try {
       let config;
       
       if (useAI && isOllamaConnected) {
-        // Use AI to generate configuration
+        // Use AI to generate configuration (removed NSO from enabled tools)
         const enabledTools = [];
-        if (enableNSO) enabledTools.push('NSO');
         if (enableAnsible) enabledTools.push('Ansible');
         if (enableTerraform) enabledTools.push('Terraform');
         if (enableNornir) enabledTools.push('Nornir');
@@ -193,9 +191,8 @@ export const IntentCreator = () => {
           description: "Ollama has successfully generated your network configuration.",
         });
       } else {
-        // Fallback to mock configuration
+        // Fallback to mock configuration (removed NSO)
         config = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
-          nso: enableNSO,
           ansible: enableAnsible,
           terraform: enableTerraform,
           nornir: enableNornir
@@ -218,9 +215,8 @@ export const IntentCreator = () => {
     } catch (error) {
       console.error('Generation failed:', error);
       
-      // Fallback to mock if AI fails
+      // Fallback to mock if AI fails (removed NSO)
       const mockConfig = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
-        nso: enableNSO,
         ansible: enableAnsible,
         terraform: enableTerraform,
         nornir: enableNornir
@@ -242,7 +238,7 @@ export const IntentCreator = () => {
     }
   };
 
-  const generateMockConfiguration = (input: string, template: string, tools: { nso: boolean, ansible: boolean, terraform: boolean, nornir: boolean }) => {
+  const generateMockConfiguration = (input: string, template: string, tools: { ansible: boolean, terraform: boolean, nornir: boolean }) => {
     const timestamp = new Date().toISOString();
     const enabledTools = Object.entries(tools).filter(([_, enabled]) => enabled).map(([tool, _]) => tool.toUpperCase());
     
@@ -262,24 +258,6 @@ export const IntentCreator = () => {
         config += `# $${variable.name} = ${variable.value} (${variable.type})\n`;
       });
       config += `\n`;
-    }
-
-    if (tools.nso) {
-      config += `
-## NSO Configuration
-configure
-  devices device $device_core_sw_01
-    config
-      ios:interface Vlan100
-        description "Marketing Department VLAN"
-        ip address $vlan_100_gateway $vlan_100_netmask
-        no shutdown
-      exit
-    commit
-  exit
-exit
-
-`;
     }
 
     if (tools.ansible) {
@@ -389,12 +367,6 @@ result = nr.run(task=configure_vlan)
               />
               <span className="text-xs text-blue-200/70">NetBox</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Circle 
-                className={`h-3 w-3 ${isNsoConnected ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'}`}
-              />
-              <span className="text-xs text-blue-200/70">NSO</span>
-            </div>
           </div>
           
           <Badge 
@@ -482,18 +454,10 @@ result = nr.run(task=configure_vlan)
                   </div>
                 )}
 
-                {/* Automation Tools Toggle Section */}
+                {/* Automation Tools Toggle Section (removed NSO) */}
                 <div>
                   <label className="text-sm text-blue-200/80 mb-3 block">Automation Tools</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="nso-toggle"
-                        checked={enableNSO}
-                        onCheckedChange={setEnableNSO}
-                      />
-                      <Label htmlFor="nso-toggle" className="text-blue-200/80">NSO</Label>
-                    </div>
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="ansible-toggle"
