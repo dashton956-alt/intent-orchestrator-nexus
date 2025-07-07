@@ -1,22 +1,35 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { URLS } from "@/config/urls";
+import { secretsService, SECRET_KEYS } from "@/config/secrets";
 
 // NetBox API Integration Service
 export class NetBoxService {
   private baseUrl: string;
-  private apiToken: string;
+  private apiToken: string | null = null;
 
   constructor() {
-    // Use Vite environment variables (prefixed with VITE_) or fallback values
-    this.baseUrl = import.meta.env.VITE_NETBOX_API_URL || "https://your-netbox-instance.com/api";
-    this.apiToken = import.meta.env.VITE_NETBOX_API_TOKEN || "YOUR_NETBOX_TOKEN_HERE";
+    this.baseUrl = URLS.NETBOX.API_BASE_URL;
+  }
+
+  // Initialize service with API token from secrets
+  private async initialize() {
+    if (!this.apiToken) {
+      this.apiToken = await secretsService.getSecret(SECRET_KEYS.NETBOX_API_TOKEN);
+    }
   }
 
   // Fetch devices from NetBox
   async fetchDevices() {
     try {
-      // TODO: Replace with actual NetBox API call
-      const response = await fetch(`${this.baseUrl}/dcim/devices/`, {
+      await this.initialize();
+
+      if (!this.apiToken) {
+        console.warn('NetBox API token not configured, using mock data');
+        return this.getMockDevices();
+      }
+
+      const response = await fetch(`${this.baseUrl}${URLS.NETBOX.ENDPOINTS.DEVICES}`, {
         headers: {
           'Authorization': `Token ${this.apiToken}`,
           'Content-Type': 'application/json',
@@ -67,7 +80,6 @@ export class NetBoxService {
   }
 
   private mapDeviceType(roleSlug: string): string {
-    // Map NetBox device roles to our device types
     const roleMapping: { [key: string]: string } = {
       'core-switch': 'core',
       'distribution-switch': 'distribution',
@@ -79,7 +91,6 @@ export class NetBoxService {
     return roleMapping[roleSlug] || 'access';
   }
 
-  // Mock data for development
   private getMockDevices() {
     return [
       {
@@ -94,18 +105,12 @@ export class NetBoxService {
           manufacturer: { name: "Cisco" }
         }
       },
-      // Add more mock devices as needed
     ];
   }
 
-  // Fetch merge requests from NetBox
   async fetchMergeRequests() {
     try {
-      // TODO: Replace with actual NetBox change management API
-      // This is a placeholder for NetBox change requests/tickets
       console.log('Fetching merge requests from NetBox...');
-      
-      // Return mock data for now
       return this.getMockMergeRequests();
     } catch (error) {
       console.error('NetBox Merge Requests Error:', error);

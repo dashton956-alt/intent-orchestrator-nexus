@@ -1,4 +1,5 @@
-import { getEndpoints } from '@/config/endpoints';
+import { URLS } from '@/config/urls';
+import { secretsService, SECRET_KEYS } from '@/config/secrets';
 
 export interface NetBoxVariable {
   name: string;
@@ -58,18 +59,31 @@ export interface NetBoxVLAN {
 }
 
 class NetBoxGraphQLService {
-  private endpoints = getEndpoints();
+  private apiToken: string | null = null;
 
   constructor() {
-    // Configuration is now handled by the centralized endpoints config
+    // Configuration is now handled by the centralized urls and secrets config
+  }
+
+  // Initialize service with API token from secrets
+  private async initialize() {
+    if (!this.apiToken) {
+      this.apiToken = await secretsService.getSecret(SECRET_KEYS.NETBOX_API_TOKEN);
+    }
   }
 
   private async makeGraphQLQuery(query: string, variables?: Record<string, any>) {
     try {
-      const response = await fetch(this.endpoints.NETBOX.GRAPHQL_URL, {
+      await this.initialize();
+
+      if (!this.apiToken) {
+        throw new Error('NetBox API token not configured');
+      }
+
+      const response = await fetch(URLS.NETBOX.GRAPHQL_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${this.endpoints.NETBOX.API_TOKEN}`,
+          'Authorization': `Token ${this.apiToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -97,7 +111,13 @@ class NetBoxGraphQLService {
 
   private async makeRestAPICall(endpoint: string, params?: Record<string, any>) {
     try {
-      const url = new URL(`${this.endpoints.NETBOX.API_BASE_URL}${endpoint}`);
+      await this.initialize();
+
+      if (!this.apiToken) {
+        throw new Error('NetBox API token not configured');
+      }
+
+      const url = new URL(`${URLS.NETBOX.API_BASE_URL}${endpoint}`);
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -108,7 +128,7 @@ class NetBoxGraphQLService {
 
       const response = await fetch(url.toString(), {
         headers: {
-          'Authorization': `Token ${this.endpoints.NETBOX.API_TOKEN}`,
+          'Authorization': `Token ${this.apiToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -125,7 +145,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Get all available variables for intent creation
   async getIntentVariables(intentContext?: {
     deviceName?: string;
     siteName?: string;
@@ -135,7 +154,6 @@ class NetBoxGraphQLService {
     const variables: NetBoxVariable[] = [];
 
     try {
-      // Get sites
       const sites = await this.getSites();
       sites.forEach(site => {
         variables.push({
@@ -146,7 +164,6 @@ class NetBoxGraphQLService {
         });
       });
 
-      // Get device types and roles
       const deviceRoles = await this.getDeviceRoles();
       deviceRoles.forEach(role => {
         variables.push({
@@ -157,7 +174,6 @@ class NetBoxGraphQLService {
         });
       });
 
-      // Get VLANs
       const vlans = await this.getVLANs();
       vlans.forEach(vlan => {
         variables.push({
@@ -168,7 +184,6 @@ class NetBoxGraphQLService {
         });
       });
 
-      // Get devices with context
       if (intentContext?.siteName || intentContext?.deviceRole) {
         const devices = await this.getDevices({
           site: intentContext.siteName,
@@ -183,7 +198,6 @@ class NetBoxGraphQLService {
             description: `Device: ${device.name} (${device.device_role.name})`
           });
           
-          // Add device-specific variables
           if (device.primary_ip4) {
             variables.push({
               name: `device_${device.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_ip`,
@@ -202,7 +216,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // GraphQL query to get devices with full context
   async getDevicesGraphQL(filters?: {
     site?: string;
     role?: string;
@@ -265,7 +278,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // REST API fallback for devices
   async getDevices(filters?: {
     site?: string;
     role?: string;
@@ -285,7 +297,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Get sites
   async getSites(): Promise<NetBoxSite[]> {
     try {
       return await this.makeRestAPICall('/dcim/sites/');
@@ -295,7 +306,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Get VLANs
   async getVLANs(siteId?: number): Promise<NetBoxVLAN[]> {
     try {
       const params = siteId ? { site_id: siteId } : {};
@@ -306,7 +316,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Get device roles
   async getDeviceRoles(): Promise<Array<{ name: string; slug: string }>> {
     try {
       return await this.makeRestAPICall('/dcim/device-roles/');
@@ -316,7 +325,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Get interface details for a device
   async getDeviceInterfaces(deviceId: number): Promise<Array<{
     name: string;
     type: { value: string; label: string };
@@ -332,7 +340,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Get config context for a device
   async getDeviceConfigContext(deviceId: number): Promise<Record<string, any>> {
     try {
       const device = await this.makeRestAPICall(`/dcim/devices/${deviceId}/`);
@@ -343,7 +350,6 @@ class NetBoxGraphQLService {
     }
   }
 
-  // Search for network objects by natural language
   async searchNetworkObjects(query: string): Promise<{
     devices: NetBoxDevice[];
     sites: NetBoxSite[];
@@ -357,7 +363,7 @@ class NetBoxGraphQLService {
       ]);
 
       return {
-        devices: devices.slice(0, 10), // Limit results
+        devices: devices.slice(0, 10),
         sites: sites.slice(0, 10),
         vlans: vlans.slice(0, 10)
       };

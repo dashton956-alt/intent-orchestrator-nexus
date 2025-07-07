@@ -1,3 +1,4 @@
+import { URLS } from '@/config/urls';
 
 export interface ConfigDifference {
   path: string;
@@ -25,10 +26,9 @@ class ConfigComparisonService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_CONFIG_COMPARISON_API_URL || "http://localhost:8000/api";
+    this.baseUrl = URLS.CONFIG_COMPARISON.BASE_URL;
   }
 
-  // Compare single device configuration instantly
   async compareDeviceConfig(deviceId: string, deviceIp: string): Promise<ConfigComparison> {
     try {
       const response = await fetch(`${this.baseUrl}/compare/instant`, {
