@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export const BulkOperations = () => {
 
   const getDeviceStatus = (deviceId: string): string => {
     const device = devices?.find(d => d.id === deviceId);
-    return device?.status || 'unknown';
+    return device?.status ? String(device.status) : 'unknown';
   };
 
   const eligibleIntents = intents?.filter(intent => 
@@ -186,14 +187,14 @@ export const BulkOperations = () => {
                     />
                     <div className="flex-1">
                       <div className="text-sm text-white">{device.name}</div>
-                      <div className="text-xs text-blue-200/70">{device.ip_address}</div>
+                      <div className="text-xs text-blue-200/70">{device.ip_address ? String(device.ip_address) : 'No IP'}</div>
                     </div>
                     <Badge className={`text-xs ${
                       device.status === 'online' 
                         ? 'bg-green-600' 
                         : 'bg-red-600'
                     }`}>
-                      {String(device.status)}
+                      {getDeviceStatus(device.id)}
                     </Badge>
                   </div>
                 ))}
