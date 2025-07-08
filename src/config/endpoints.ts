@@ -23,9 +23,9 @@ export const ENDPOINTS = {
     API_TOKEN: 'USE_SECRETS_SERVICE', // Placeholder - use secretsService instead
     ENDPOINTS: URLS.NETBOX.ENDPOINTS
   },
-  NSO: {
-    BASE_URL: URLS.NSO.BASE_URL,
-    API_VERSION: URLS.NSO.API_VERSION,
+  CISCO: {
+    BASE_URL: URLS.CISCO.BASE_URL,
+    API_VERSION: URLS.CISCO.API_VERSION,
     USERNAME: 'USE_SECRETS_SERVICE', // Placeholder - use secretsService instead
     PASSWORD: 'USE_SECRETS_SERVICE' // Placeholder - use secretsService instead
   },
