@@ -3,81 +3,117 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { DjangoAuthProvider, useDjangoAuth } from "@/contexts/DjangoAuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error) => {
-        // Don't retry on auth errors
-        if (error?.message?.includes('auth') || error?.message?.includes('unauthorized')) {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: (failureCount, error: any) => {
+        if (error?.message?.includes('Authentication required')) {
           return false;
         }
         return failureCount < 3;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-    mutations: {
-      retry: 1,
     },
   },
 });
 
-const App = () => (
-  <ErrorBoundary>
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useDjangoAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Public Route Component (redirect to dashboard if authenticated)
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useDjangoAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <TooltipProvider>
+      <DjangoAuthProvider>
+        <TooltipProvider>
+          <ErrorBoundary>
             <Toaster />
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/auth" element={
-                  <ErrorBoundary>
-                    <Auth />
-                  </ErrorBoundary>
-                } />
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
+                <Route
+                  path="/auth"
+                  element={
+                    <PublicRoute>
+                      <Auth />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
                       <Index />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
                       <Dashboard />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
-                } />
-                <Route path="/analytics" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute>
                       <Analytics />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
-                } />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
-      </AuthProvider>
+          </ErrorBoundary>
+        </TooltipProvider>
+      </DjangoAuthProvider>
     </QueryClientProvider>
-  </ErrorBoundary>
-);
+  );
+}
 
 export default App;

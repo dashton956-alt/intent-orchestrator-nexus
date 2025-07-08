@@ -5,8 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNetworkDevices, useNetworkIntents, useMergeRequests } from "@/hooks/useNetworkData";
+import { useDjangoAuth } from "@/contexts/DjangoAuthContext";
+import { 
+  useDjangoNetworkDevices, 
+  useDjangoNetworkIntents, 
+  useDjangoMergeRequests 
+} from "@/hooks/useDjangoNetworkData";
 import { NetworkTopology } from "@/components/NetworkTopology";
 import { MergeRequestsView } from "@/components/MergeRequestsView";
 import { IntentCreator } from "@/components/IntentCreator";
@@ -20,48 +24,40 @@ import { AIOptimization } from "@/components/AIOptimization";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useDjangoAuth();
   
   const { 
     data: devices, 
     isLoading: devicesLoading, 
     error: devicesError 
-  } = useNetworkDevices();
+  } = useDjangoNetworkDevices();
   
   const { 
     data: intents, 
     isLoading: intentsLoading, 
     error: intentsError 
-  } = useNetworkIntents();
+  } = useDjangoNetworkIntents();
   
   const { 
     data: mergeRequests, 
     isLoading: mergeRequestsLoading, 
     error: mergeRequestsError 
-  } = useMergeRequests();
+  } = useDjangoMergeRequests();
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "You have been logged out of your account.",
-      });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Sign out error:", error);
     }
   };
 
   // Calculate network health based on real device data
   const networkHealth = devices && devices.length > 0 ? 
-    (devices.filter(d => d.status === 'online').length / devices.length) * 100 : 98.7;
+    (devices.filter((d: any) => d.status === 'online').length / devices.length) * 100 : 98.7;
 
-  const activeIntents = intents?.filter(i => i.status === 'deployed').length || 234;
-  const pendingIntents = intents?.filter(i => i.status === 'pending').length || 13;
+  const activeIntents = intents?.filter((i: any) => i.status === 'deployed').length || 0;
+  const pendingIntents = intents?.filter((i: any) => i.status === 'pending').length || 0;
 
   // Show loading state for critical data
   const isInitialLoading = devicesLoading && intentsLoading && mergeRequestsLoading;
@@ -95,7 +91,7 @@ const Index = () => {
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="outline" className="border-green-400/30 text-green-400">
-                NetBox Connected
+                Django Connected
               </Badge>
               <Badge variant="outline" className="border-blue-400/30 text-blue-400">
                 NSO Ready
@@ -121,7 +117,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-black/20 backdrop-blur-sm border border-white/10">
+          <TabsList className="grid w-full grid-cols-7 bg-black/20 backdrop-blur-sm border border-white/10">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600/30">
               Dashboard
             </TabsTrigger>
@@ -195,7 +191,7 @@ const Index = () => {
                     <div className="text-3xl font-bold text-purple-400 mb-2">{mergeRequests?.length || 0}</div>
                     <p className="text-blue-200/70 text-sm">Pending Reviews</p>
                     <Badge className="mt-3 bg-purple-600/20 text-purple-300 border-purple-400/30">
-                      {mergeRequests?.filter(mr => mr.status === 'review').length || 0} In Review
+                      {mergeRequests?.filter((mr: any) => mr.status === 'review').length || 0} In Review
                     </Badge>
                   </CardContent>
                 </Card>
