@@ -1,75 +1,112 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GitBranch, ExternalLink, Clock, CheckCircle } from "lucide-react";
+import { useGitIntegration } from "@/hooks/useGitIntegration";
 import { toast } from "@/hooks/use-toast";
 
 interface MergeRequest {
   id: string;
   title: string;
   description: string;
-  status: "draft" | "review" | "approved" | "rejected";
+  status: "draft" | "review" | "approved" | "rejected" | "open" | "merged" | "closed";
   changeNumber: string;
   author: string;
   reviewers: string[];
   createdAt: string;
   netboxUrl: string;
+  gitStatus?: "open" | "merged" | "closed";
 }
 
 export const MergeRequestsView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [mergeRequests, setMergeRequests] = useState<MergeRequest[]>([]);
+  const { checkMergeRequestStatus } = useGitIntegration();
 
-  const [mergeRequests] = useState<MergeRequest[]>([
-    {
-      id: "mr-001",
-      title: "Add VLAN 200 for Marketing Department",
-      description: "Configure VLAN 200 across distribution switches for marketing team network segmentation",
-      status: "approved",
-      changeNumber: "CHG-2024-001",
-      author: "john.doe@company.com",
-      reviewers: ["jane.smith@company.com", "mike.wilson@company.com"],
-      createdAt: "2024-01-15T10:30:00Z",
-      netboxUrl: "https://netbox.company.com/mr/001"
-    },
-    {
-      id: "mr-002",
-      title: "Update QoS Policies for Voice Traffic",
-      description: "Implement enhanced QoS policies for VoIP traffic across core infrastructure",
-      status: "review",
-      changeNumber: "CHG-2024-002",
-      author: "sarah.johnson@company.com",
-      reviewers: ["admin@company.com"],
-      createdAt: "2024-01-14T14:15:00Z",
-      netboxUrl: "https://netbox.company.com/mr/002"
-    },
-    {
-      id: "mr-003",
-      title: "Security ACL Updates for Guest Network",
-      description: "Enhance security access control lists for guest wireless network isolation",
-      status: "draft",
-      changeNumber: "CHG-2024-003",
-      author: "alex.chen@company.com",
-      reviewers: [],
-      createdAt: "2024-01-13T09:45:00Z",
-      netboxUrl: "https://netbox.company.com/mr/003"
-    }
-  ]);
+  useEffect(() => {
+    // Initialize with mock data - in real implementation, fetch from database
+    const mockData: MergeRequest[] = [
+      {
+        id: "mr-001",
+        title: "[CHG-1704729600000-ABC123] Add VLAN 200 for Marketing Department",
+        description: "Configure VLAN 200 across distribution switches for marketing team network segmentation",
+        status: "merged",
+        changeNumber: "CHG-1704729600000-ABC123",
+        author: "john.doe@company.com",
+        reviewers: ["jane.smith@company.com", "mike.wilson@company.com"],
+        createdAt: "2024-01-15T10:30:00Z",
+        netboxUrl: "https://gitlab.company.com/network/config/-/merge_requests/1",
+        gitStatus: "merged"
+      },
+      {
+        id: "mr-002",
+        title: "[CHG-1704729700000-DEF456] Update QoS Policies for Voice Traffic",
+        description: "Implement enhanced QoS policies for VoIP traffic across core infrastructure",
+        status: "open",
+        changeNumber: "CHG-1704729700000-DEF456",
+        author: "sarah.johnson@company.com",
+        reviewers: ["admin@company.com"],
+        createdAt: "2024-01-14T14:15:00Z",
+        netboxUrl: "https://gitlab.company.com/network/config/-/merge_requests/2",
+        gitStatus: "open"
+      },
+      {
+        id: "mr-003",
+        title: "[CHG-1704729800000-GHI789] Security ACL Updates for Guest Network",
+        description: "Enhance security access control lists for guest wireless network isolation",
+        status: "open",
+        changeNumber: "CHG-1704729800000-GHI789",
+        author: "alex.chen@company.com",
+        reviewers: [],
+        createdAt: "2024-01-13T09:45:00Z",
+        netboxUrl: "https://gitlab.company.com/network/config/-/merge_requests/3",
+        gitStatus: "open"
+      }
+    ];
+    setMergeRequests(mockData);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "merged": return "bg-green-600/20 text-green-300 border-green-400/30";
       case "approved": return "bg-green-600/20 text-green-300 border-green-400/30";
+      case "open": return "bg-blue-600/20 text-blue-300 border-blue-400/30";
       case "review": return "bg-yellow-600/20 text-yellow-300 border-yellow-400/30";
       case "draft": return "bg-gray-600/20 text-gray-300 border-gray-400/30";
       case "rejected": return "bg-red-600/20 text-red-300 border-red-400/30";
+      case "closed": return "bg-red-600/20 text-red-300 border-red-400/30";
       default: return "bg-gray-600/20 text-gray-300 border-gray-400/30";
     }
   };
 
+  const getGitStatusIcon = (gitStatus?: string) => {
+    switch (gitStatus) {
+      case "merged":
+        return <CheckCircle className="h-4 w-4 text-green-400" />;
+      case "open":
+        return <GitBranch className="h-4 w-4 text-blue-400" />;
+      case "closed":
+        return <Clock className="h-4 w-4 text-red-400" />;
+      default:
+        return <GitBranch className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
   const handleDeploy = (mr: MergeRequest) => {
+    if (mr.gitStatus !== "merged") {
+      toast({
+        title: "Deployment Blocked",
+        description: "Merge request must be merged before deployment",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
       title: "Deployment Initiated",
       description: `Starting deployment of ${mr.changeNumber} via Cisco NSO...`,
@@ -83,20 +120,43 @@ export const MergeRequestsView = () => {
     });
   };
 
+  const handleRefreshStatus = async (mr: MergeRequest) => {
+    try {
+      const status = await checkMergeRequestStatus(mr.id);
+      setMergeRequests(prev => 
+        prev.map(m => m.id === mr.id ? { ...m, gitStatus: status } : m)
+      );
+      toast({
+        title: "Status Refreshed",
+        description: `Git status updated to: ${status}`
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Could not refresh Git status",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filteredRequests = mergeRequests.filter(mr => {
     const matchesSearch = mr.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          mr.changeNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || mr.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || mr.status === statusFilter || mr.gitStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const canDeploy = (mr: MergeRequest) => {
+    return mr.gitStatus === "merged" && (mr.status === "approved" || mr.status === "merged");
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Merge Requests</h2>
-          <p className="text-blue-200/70">NetBox integration for network configuration changes</p>
+          <h2 className="text-2xl font-bold text-white">GitOps Merge Requests</h2>
+          <p className="text-blue-200/70">Git integration for network configuration changes with change tracking</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -112,10 +172,11 @@ export const MergeRequestsView = () => {
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-white/20">
               <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="merged">Merged</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="review">Review</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -128,11 +189,14 @@ export const MergeRequestsView = () => {
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <CardTitle className="text-white text-lg">{mr.title}</CardTitle>
-                    <Badge className={getStatusColor(mr.status)} variant="outline">
-                      {mr.status.charAt(0).toUpperCase() + mr.status.slice(1)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {getGitStatusIcon(mr.gitStatus)}
+                      <Badge className={getStatusColor(mr.gitStatus || mr.status)} variant="outline">
+                        {mr.gitStatus || mr.status}
+                      </Badge>
+                    </div>
                   </div>
                   <CardDescription className="text-blue-200/70">
                     {mr.description}
@@ -144,7 +208,7 @@ export const MergeRequestsView = () => {
             <CardContent className="pt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <div className="text-xs text-blue-200/60 uppercase tracking-wide mb-1">Change Number</div>
+                  <div className="text-xs text-blue-200/60 uppercase tracking-wide mb-1">Change Reference</div>
                   <div className="text-white font-mono text-sm">{mr.changeNumber}</div>
                 </div>
                 <div>
@@ -152,9 +216,10 @@ export const MergeRequestsView = () => {
                   <div className="text-white text-sm">{mr.author}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-blue-200/60 uppercase tracking-wide mb-1">Reviewers</div>
-                  <div className="text-white text-sm">
-                    {mr.reviewers.length > 0 ? mr.reviewers.join(", ") : "None assigned"}
+                  <div className="text-xs text-blue-200/60 uppercase tracking-wide mb-1">Git Status</div>
+                  <div className="flex items-center gap-2">
+                    {getGitStatusIcon(mr.gitStatus)}
+                    <span className="text-white text-sm capitalize">{mr.gitStatus || 'Unknown'}</span>
                   </div>
                 </div>
                 <div>
@@ -172,38 +237,40 @@ export const MergeRequestsView = () => {
                   onClick={() => window.open(mr.netboxUrl, '_blank')}
                   className="border-blue-400/30 text-blue-300 hover:bg-blue-600/10"
                 >
-                  View in NetBox
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  View in Git
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRefreshStatus(mr)}
+                  className="border-purple-400/30 text-purple-300 hover:bg-purple-600/10"
+                >
+                  <GitBranch className="h-4 w-4 mr-1" />
+                  Refresh Status
                 </Button>
                 
-                {mr.status === "approved" && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDryRun(mr)}
-                      className="border-yellow-400/30 text-yellow-300 hover:bg-yellow-600/10"
-                    >
-                      Dry Run
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleDeploy(mr)}
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-                    >
-                      Deploy Intent
-                    </Button>
-                  </>
-                )}
-                
-                {mr.status === "review" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-orange-400/30 text-orange-300 hover:bg-orange-600/10"
-                  >
-                    Pending Review
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDryRun(mr)}
+                  className="border-yellow-400/30 text-yellow-300 hover:bg-yellow-600/10"
+                >
+                  Dry Run
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleDeploy(mr)}
+                  disabled={!canDeploy(mr)}
+                  className={canDeploy(mr) 
+                    ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                    : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                  }
+                >
+                  {canDeploy(mr) ? "Deploy Intent" : "Awaiting Merge"}
+                </Button>
               </div>
             </CardContent>
           </Card>

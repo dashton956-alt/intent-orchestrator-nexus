@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +5,7 @@ import { netboxService } from "@/services/netboxService";
 import { ciscoService } from "@/services/ciscoService";
 import { useErrorHandler } from "./useErrorHandler";
 import { useRetry } from "./useRetry";
+import { useGitIntegration } from "./useGitIntegration";
 
 // Hook to fetch and sync network devices
 export const useNetworkDevices = () => {
@@ -141,11 +140,12 @@ export const useNetworkMetrics = () => {
   });
 };
 
-// Hook to create and deploy network intents
+// Hook to create and deploy network intents with Git integration
 export const useCreateIntent = () => {
   const [loading, setLoading] = useState(false);
   const { handleError } = useErrorHandler();
   const { execute: executeWithRetry } = useRetry({ maxRetries: 2 });
+  const { createIntentMergeRequest } = useGitIntegration();
 
   const createIntent = async (intentData: {
     title: string;
@@ -187,7 +187,20 @@ export const useCreateIntent = () => {
           throw new Error(`Failed to update intent configuration: ${updateError.message}`);
         }
 
-        return intent;
+        // Create Git merge request
+        const mrData = await createIntentMergeRequest(intent, configuration);
+        
+        if (mrData) {
+          // Update intent with change reference
+          await supabase
+            .from('network_intents')
+            .update({ 
+              description: `${intent.description}\n\nChange Reference: ${mrData.changeReference}`
+            })
+            .eq('id', intent.id);
+        }
+
+        return { ...intent, changeReference: mrData?.changeReference };
       });
     } catch (error) {
       handleError(error as Error, "Failed to create network intent");

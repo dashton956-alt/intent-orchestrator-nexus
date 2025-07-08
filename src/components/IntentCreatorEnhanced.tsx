@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Play, Calendar, Users, TestTube } from 'lucide-react';
+import { Play, Calendar, Users, TestTube, GitBranch, ExternalLink } from 'lucide-react';
 import { useCreateIntent } from '@/hooks/useNetworkData';
 import { DryRunDialog } from './DryRunDialog';
 import { configurationService } from '@/services/configurationService';
@@ -32,6 +32,8 @@ export const IntentCreatorEnhanced = () => {
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [tempIntentId, setTempIntentId] = useState<string | null>(null);
   const [generatedConfig, setGeneratedConfig] = useState<string>('');
+  const [changeReference, setChangeReference] = useState<string>('');
+  const [gitMergeRequestUrl, setGitMergeRequestUrl] = useState<string>('');
 
   const { createIntent, loading } = useCreateIntent();
 
@@ -47,15 +49,20 @@ export const IntentCreatorEnhanced = () => {
     e.preventDefault();
     
     try {
-      // Create the intent
+      // Create the intent with Git integration
       const intent = await createIntent(formData);
       setTempIntentId(intent.id);
       
+      // Store change reference and Git URL if available
+      if (intent.changeReference) {
+        setChangeReference(intent.changeReference);
+      }
+      
       // Generate configuration for dry-run
-      // In a real implementation, this would come from the AI service
       const mockConfig = `# Generated configuration for ${formData.intent_type}
 # Intent: ${formData.title}
 # Description: ${formData.description}
+# Change Reference: ${intent.changeReference || 'Not assigned'}
 
 interface GigabitEthernet0/1
  description ${formData.description}
@@ -69,7 +76,7 @@ interface GigabitEthernet0/1
         await approvalService.createApprovalWorkflow(intent.id, 2);
         toast({
           title: "Approval Required",
-          description: "Intent created and sent for approval"
+          description: `Intent created with change reference: ${intent.changeReference}`
         });
       }
 
@@ -86,13 +93,14 @@ interface GigabitEthernet0/1
       await webhookService.triggerWebhooks('intent.created', {
         intent,
         requireApproval,
-        scheduled: scheduleDeployment
+        scheduled: scheduleDeployment,
+        changeReference: intent.changeReference
       });
 
       if (!requireApproval && !scheduleDeployment) {
         toast({
           title: "Intent Created",
-          description: "Network intent has been created successfully"
+          description: `Network intent created with change reference: ${intent.changeReference}`
         });
       }
 
@@ -158,7 +166,7 @@ interface GigabitEthernet0/1
       <CardHeader>
         <CardTitle className="text-white">Enhanced Intent Creator</CardTitle>
         <CardDescription className="text-blue-200/70">
-          Create network intents with dry-run validation, approval workflows, and scheduling
+          Create network intents with GitOps workflow, dry-run validation, approval workflows, and scheduling
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -218,6 +226,36 @@ interface GigabitEthernet0/1
           </div>
 
           <Separator className="bg-white/20" />
+
+          {/* Git Integration Status */}
+          {changeReference && (
+            <div className="bg-black/20 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <GitBranch className="h-5 w-5 text-green-400" />
+                <h3 className="text-white font-medium">GitOps Integration</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-200/70 text-sm">Change Reference:</span>
+                  <Badge className="bg-blue-600 text-white">{changeReference}</Badge>
+                </div>
+                {gitMergeRequestUrl && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-200/70 text-sm">Merge Request:</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(gitMergeRequestUrl, '_blank')}
+                      className="border-blue-400/30 text-blue-300 hover:bg-blue-600/10 h-6 px-2 text-xs"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      View MR
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Workflow Options */}
           <div className="space-y-4">
