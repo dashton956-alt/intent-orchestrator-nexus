@@ -1,65 +1,53 @@
 
 /**
  * Centralized URL Configuration
- * All service URLs are managed here for better organization
+ * All external service URLs and endpoints are configured here
  */
 
-// Get URLs from environment variables or use fallbacks
-const getEnvUrl = (key: string, fallback: string) => {
-  return import.meta.env[key] || fallback;
-};
-
 export const URLS = {
-  // Ollama AI Service
-  OLLAMA: {
-    BASE_URL: getEnvUrl('VITE_OLLAMA_BASE_URL', 'http://localhost:11434'),
-    HEALTH_CHECK: '/api/tags',
-    GENERATE: '/api/generate'
+  // Cisco NSO URLs
+  NSO: {
+    BASE_URL: import.meta.env.VITE_NSO_BASE_URL || 'http://localhost:8080',
+    RESTCONF_URL: '/restconf/data',
+    ENDPOINTS: {
+      DEVICES: '/tailf-ncs:devices/device',
+      SERVICES: '/tailf-ncs:services',
+      ROLLBACKS: '/tailf-ncs:rollbacks'
+    }
   },
 
-  // NetBox IPAM/DCIM
+  // NetBox URLs  
   NETBOX: {
-    API_BASE_URL: getEnvUrl('VITE_NETBOX_API_URL', 'https://your-netbox-instance.com/api'),
-    GRAPHQL_URL: getEnvUrl('VITE_NETBOX_GRAPHQL_URL', 'https://your-netbox-instance.com/graphql/'),
+    API_BASE_URL: import.meta.env.VITE_NETBOX_API_URL || 'http://localhost:8000/api',
+    GRAPHQL_URL: import.meta.env.VITE_NETBOX_GRAPHQL_URL || 'http://localhost:8000/graphql',
     ENDPOINTS: {
       DEVICES: '/dcim/devices/',
       SITES: '/dcim/sites/',
       VLANS: '/ipam/vlans/',
-      DEVICE_ROLES: '/dcim/device-roles/',
-      INTERFACES: '/dcim/interfaces/'
+      INTERFACES: '/dcim/interfaces/',
+      JOURNAL_ENTRIES: '/extras/journal-entries/'
     }
   },
 
-  // Cisco Network Service Orchestrator
-  CISCO: {
-    BASE_URL: getEnvUrl('VITE_CISCO_BASE_URL', 'http://your-cisco-server:8080'),
-    API_VERSION: 'v1'
+  // Git Integration URLs
+  GIT: {
+    API_URL: import.meta.env.VITE_GIT_API_URL || 'https://gitlab.com/api/v4',
+    PROJECT_ID: import.meta.env.VITE_GIT_PROJECT_ID || '',
+    ENDPOINTS: {
+      BRANCHES: '/repository/branches',
+      FILES: '/repository/files',
+      MERGE_REQUESTS: '/merge_requests',
+      COMMITS: '/repository/commits'
+    }
   },
 
-  // Monitoring and Metrics
-  MONITORING: {
-    PROMETHEUS_URL: getEnvUrl('VITE_PROMETHEUS_URL', 'http://localhost:9090'),
-    GRAFANA_URL: getEnvUrl('VITE_GRAFANA_URL', 'http://localhost:3000'),
-    ALERTMANAGER_URL: getEnvUrl('VITE_ALERTMANAGER_URL', 'http://localhost:9093')
-  },
-
-  // Configuration Comparison API
-  CONFIG_COMPARISON: {
-    BASE_URL: getEnvUrl('VITE_CONFIG_COMPARISON_API_URL', 'http://localhost:8000/api')
-  }
-} as const;
-
-// Default configuration values that don't need to be secret
-export const CONFIG = {
+  // Ollama URLs
   OLLAMA: {
-    DEFAULT_MODEL: 'llama3.1'
-  },
-  
-  DEVICE_MANAGEMENT: {
-    SNMP_COMMUNITY: 'public',
-    TELNET_PORT: 23,
-    SSH_PORT: 22,
-    HTTP_PORT: 80,
-    HTTPS_PORT: 443
+    BASE_URL: import.meta.env.VITE_OLLAMA_URL || 'http://localhost:11434',
+    ENDPOINTS: {
+      GENERATE: '/api/generate',
+      CHAT: '/api/chat',
+      MODELS: '/api/tags'
+    }
   }
 } as const;
