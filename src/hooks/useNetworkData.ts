@@ -1,9 +1,10 @@
 
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { netboxService } from "@/services/netboxService";
-import { nsoService } from "@/services/nsoService";
+import { ciscoService } from "@/services/ciscoService";
 import { useErrorHandler } from "./useErrorHandler";
 import { useRetry } from "./useRetry";
 
@@ -170,8 +171,8 @@ export const useCreateIntent = () => {
           throw new Error(`Failed to create intent: ${error.message}`);
         }
 
-        // Generate NSO configuration
-        const configuration = await nsoService.generateConfiguration(intent);
+        // Generate Cisco configuration
+        const configuration = await ciscoService.generateConfiguration(intent);
         
         // Update intent with generated configuration
         const { error: updateError } = await supabase

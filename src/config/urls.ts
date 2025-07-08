@@ -30,9 +30,9 @@ export const URLS = {
     }
   },
 
-  // Network Service Orchestrator (NSO)
-  NSO: {
-    BASE_URL: getEnvUrl('VITE_NSO_BASE_URL', 'http://your-nso-server:8080'),
+  // Cisco Network Service Orchestrator
+  CISCO: {
+    BASE_URL: getEnvUrl('VITE_CISCO_BASE_URL', 'http://your-cisco-server:8080'),
     API_VERSION: 'v1'
   },
 

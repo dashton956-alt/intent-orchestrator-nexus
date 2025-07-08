@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ollamaService } from "@/services/ollamaService";
 import { netboxService } from "@/services/netboxService";
-import { nsoService } from "@/services/nsoService";
+import { ciscoService } from "@/services/ciscoService";
 import { NetBoxVariablePicker } from "./NetBoxVariablePicker";
 import { Brain, Sparkles, Circle, Database } from "lucide-react";
 import { NetBoxVariable } from "@/services/netboxGraphQLService";
@@ -25,15 +25,16 @@ export const IntentCreator = () => {
   // Connection status states
   const [isOllamaConnected, setIsOllamaConnected] = useState(false);
   const [isNetboxConnected, setIsNetboxConnected] = useState(false);
-  const [isNsoConnected, setIsNsoConnected] = useState(false);
+  const [isCiscoConnected, setIsCiscoConnected] = useState(false);
   
   const [useAI, setUseAI] = useState(true);
   const [useNetBoxLookup, setUseNetBoxLookup] = useState(true);
   
-  // Toggle states for automation tools (removed enableNSO)
+  // Toggle states for automation tools
   const [enableAnsible, setEnableAnsible] = useState(false);
   const [enableTerraform, setEnableTerraform] = useState(false);
   const [enableNornir, setEnableNornir] = useState(false);
+  const [enableCisco, setEnableCisco] = useState(false);
 
   useEffect(() => {
     checkAllConnections();
@@ -43,7 +44,7 @@ export const IntentCreator = () => {
     await Promise.all([
       checkOllamaConnection(),
       checkNetboxConnection(),
-      checkNsoConnection()
+      checkCiscoConnection()
     ]);
   };
 
@@ -61,9 +62,9 @@ export const IntentCreator = () => {
     }
   };
 
-  const checkNsoConnection = async () => {
+  const checkCiscoConnection = async () => {
     try {
-      // Add a simple connection check method to NSO service
+      // Add a simple connection check method to Cisco service
       await fetch('http://localhost:8080/restconf/data/', {
         method: 'GET',
         headers: {
@@ -71,9 +72,9 @@ export const IntentCreator = () => {
           'Accept': 'application/json',
         },
       });
-      setIsNsoConnected(true);
+      setIsCiscoConnected(true);
     } catch (error) {
-      setIsNsoConnected(false);
+      setIsCiscoConnected(false);
     }
   };
 
@@ -147,11 +148,11 @@ export const IntentCreator = () => {
       return;
     }
 
-    // Check if at least one automation tool is enabled (removed NSO check)
-    if (!enableAnsible && !enableTerraform && !enableNornir) {
+    // Check if at least one automation tool is enabled
+    if (!enableAnsible && !enableTerraform && !enableNornir && !enableCisco) {
       toast({
         title: "Automation Tool Required",
-        description: "Please enable at least one automation tool (Ansible, Terraform, or Nornir).",
+        description: "Please enable at least one automation tool (Ansible, Terraform, Nornir, or Cisco).",
         variant: "destructive"
       });
       return;
@@ -164,11 +165,12 @@ export const IntentCreator = () => {
       let config;
       
       if (useAI && isOllamaConnected) {
-        // Use AI to generate configuration (removed NSO from enabled tools)
+        // Use AI to generate configuration
         const enabledTools = [];
         if (enableAnsible) enabledTools.push('Ansible');
         if (enableTerraform) enabledTools.push('Terraform');
         if (enableNornir) enabledTools.push('Nornir');
+        if (enableCisco) enabledTools.push('Cisco');
         
         // Include NetBox variables in the AI prompt if enabled
         let enhancedInput = naturalLanguageInput;
@@ -191,11 +193,12 @@ export const IntentCreator = () => {
           description: "Ollama has successfully generated your network configuration.",
         });
       } else {
-        // Fallback to mock configuration (removed NSO)
+        // Fallback to mock configuration
         config = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
           ansible: enableAnsible,
           terraform: enableTerraform,
-          nornir: enableNornir
+          nornir: enableNornir,
+          cisco: enableCisco
         });
         
         toast({
@@ -215,11 +218,12 @@ export const IntentCreator = () => {
     } catch (error) {
       console.error('Generation failed:', error);
       
-      // Fallback to mock if AI fails (removed NSO)
+      // Fallback to mock if AI fails
       const mockConfig = generateMockConfiguration(naturalLanguageInput, selectedTemplate, {
         ansible: enableAnsible,
         terraform: enableTerraform,
-        nornir: enableNornir
+        nornir: enableNornir,
+        cisco: enableCisco
       });
       
       const finalConfig = useNetBoxLookup && selectedNetBoxVariables.length > 0 
@@ -238,7 +242,7 @@ export const IntentCreator = () => {
     }
   };
 
-  const generateMockConfiguration = (input: string, template: string, tools: { ansible: boolean, terraform: boolean, nornir: boolean }) => {
+  const generateMockConfiguration = (input: string, template: string, tools: { ansible: boolean, terraform: boolean, nornir: boolean, cisco: boolean }) => {
     const timestamp = new Date().toISOString();
     const enabledTools = Object.entries(tools).filter(([_, enabled]) => enabled).map(([tool, _]) => tool.toUpperCase());
     
@@ -316,6 +320,38 @@ result = nr.run(task=configure_vlan)
 `;
     }
 
+    if (tools.cisco) {
+      config += `
+## Cisco Configuration
+{
+  "cisco-ios-cli:interface": {
+    "GigabitEthernet": [
+      {
+        "name": "0/1",
+        "switchport": {
+          "mode": {
+            "access": [null]
+          },
+          "access": {
+            "vlan": "$vlan_100"
+          }
+        }
+      }
+    ]
+  },
+  "cisco-ios-cli:vlan": {
+    "vlan-list": [
+      {
+        "id": "$vlan_100",
+        "name": "Marketing-VLAN"
+      }
+    ]
+  }
+}
+
+`;
+    }
+
     return config;
   };
 
@@ -367,6 +403,12 @@ result = nr.run(task=configure_vlan)
               />
               <span className="text-xs text-blue-200/70">NetBox</span>
             </div>
+            <div className="flex items-center gap-1">
+              <Circle 
+                className={`h-3 w-3 ${isCiscoConnected ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'}`}
+              />
+              <span className="text-xs text-blue-200/70">Cisco</span>
+            </div>
           </div>
           
           <Badge 
@@ -374,6 +416,12 @@ result = nr.run(task=configure_vlan)
             className={isOllamaConnected ? "bg-green-600/20 text-green-300 border-green-400/30" : ""}
           >
             {isOllamaConnected ? "AI Ready" : "Template Mode"}
+          </Badge>
+          <Badge 
+            variant={isCiscoConnected ? "default" : "secondary"}
+            className={isCiscoConnected ? "bg-blue-600/20 text-blue-300 border-blue-400/30" : ""}
+          >
+            {isCiscoConnected ? "Cisco Ready" : "Cisco Offline"}
           </Badge>
           <Button
             onClick={checkAllConnections}
@@ -454,10 +502,10 @@ result = nr.run(task=configure_vlan)
                   </div>
                 )}
 
-                {/* Automation Tools Toggle Section (removed NSO) */}
+                {/* Automation Tools Toggle Section */}
                 <div>
                   <label className="text-sm text-blue-200/80 mb-3 block">Automation Tools</label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="ansible-toggle"
@@ -481,6 +529,14 @@ result = nr.run(task=configure_vlan)
                         onCheckedChange={setEnableNornir}
                       />
                       <Label htmlFor="nornir-toggle" className="text-blue-200/80">Nornir</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="cisco-toggle"
+                        checked={enableCisco}
+                        onCheckedChange={setEnableCisco}
+                      />
+                      <Label htmlFor="cisco-toggle" className="text-blue-200/80">Cisco</Label>
                     </div>
                   </div>
                 </div>
