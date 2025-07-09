@@ -26,6 +26,7 @@ export interface Recommendation {
   priority: 'Low' | 'Medium' | 'High';
   impact: string;
   category: 'Performance' | 'Security' | 'NetBox' | 'General';
+  estimatedSavings?: string;
 }
 
 export interface AIAnalysis {
@@ -47,4 +48,20 @@ export interface UseAIOptimizationReturn {
   error: string | null;
   runOptimization: () => Promise<void>;
   applyOptimization: (recommendationId: string) => Promise<void>;
+  generateConfiguration: (
+    intentType: string,
+    description: string,
+    naturalLanguageInput: string,
+    context?: {
+      siteName?: string;
+      deviceName?: string;
+      deviceRole?: string;
+    }
+  ) => Promise<{
+    configuration: string;
+    template: string;
+    variables: string[];
+    description: string;
+    deviceTypes: string[];
+  }>;
 }

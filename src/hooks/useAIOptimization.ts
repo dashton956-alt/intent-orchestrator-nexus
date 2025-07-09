@@ -85,37 +85,46 @@ export const useAIOptimization = (): UseAIOptimizationReturn => {
     try {
       // Generate analysis without sending NetBox data to OpenAI
       const analysisResult: AIAnalysis = {
-        overallScore: 85,
-        performanceMetrics: {
-          throughput: Math.random() * 1000,
-          latency: Math.random() * 50,
-          packetLoss: Math.random() * 2,
-          utilization: Math.random() * 100
-        },
+        performanceScore: 85,
+        securityScore: 88,
+        netboxScore: 82,
+        optimizationPotential: 15,
+        summary: 'Network analysis completed. Found several optimization opportunities in VLAN configuration and security settings.',
+        timestamp: new Date().toISOString(),
+        performanceIssues: [
+          {
+            title: 'High CPU Utilization',
+            description: 'Some devices showing consistently high CPU usage',
+            impact: 'Medium'
+          }
+        ],
+        securityIssues: [
+          {
+            title: 'Default SNMP Community',
+            description: 'Some devices still use default SNMP community strings',
+            severity: 'Medium'
+          }
+        ],
+        netboxIssues: [
+          {
+            title: 'Missing Device Documentation',
+            description: 'Several devices lack proper documentation in NetBox',
+            category: 'Data Quality',
+            severity: 'Medium',
+            affectedObjects: ['Router-1', 'Switch-2']
+          }
+        ],
         recommendations: [
           {
             id: '1',
             title: 'Optimize VLAN Configuration',
             description: 'Consolidate VLANs to reduce broadcast domains',
-            impact: 'Medium',
+            impact: 'Medium performance improvement',
             priority: 'High',
+            category: 'Performance',
             estimatedSavings: '$500/month'
           }
-        ],
-        securityFindings: [
-          {
-            severity: 'Medium',
-            title: 'Default SNMP Community',
-            description: 'Some devices still use default SNMP community strings',
-            affectedDevices: ['Router-1', 'Switch-2']
-          }
-        ],
-        networkHealth: {
-          score: 88,
-          uptime: 99.5,
-          errorRate: 0.01,
-          complianceScore: 92
-        }
+        ]
       };
 
       setAnalysis(analysisResult);
