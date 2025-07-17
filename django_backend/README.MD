@@ -23,16 +23,16 @@ python manage.py runserver
 # Or use Docker:
 
 
-docker-compose up
+docker compose up
 
 
 # Create superuser in the Django container
-docker-compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py createsuperuser
 
 # To access the Django shell in the container
-docker-compose exec web python manage.py shell
+docker compose exec web python manage.py shell
 
 # To run management commands
-docker-compose exec web python manage.py migrate
+docker compose exec web python manage.py migrate
 
-docker-compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py createsuperuser
