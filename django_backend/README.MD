@@ -34,4 +34,5 @@ docker-compose exec web python manage.py shell
 
 # To run management commands
 docker-compose exec web python manage.py migrate
+
 docker-compose exec web python manage.py createsuperuser
