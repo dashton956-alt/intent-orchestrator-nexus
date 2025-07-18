@@ -26,9 +26,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected Route Component - Updated to use Django auth
+// Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useDjangoAuth();
+
+  console.log('ProtectedRoute - user:', user, 'loading:', loading);
 
   if (loading) {
     return (
@@ -39,15 +41,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
+    console.log('No user, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
   return <>{children}</>;
 };
 
-// Public Route Component - Updated to use Django auth
+// Public Route Component
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useDjangoAuth();
+
+  console.log('PublicRoute - user:', user, 'loading:', loading);
 
   if (loading) {
     return (
@@ -58,6 +63,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user) {
+    console.log('User exists, redirecting to /');
     return <Navigate to="/" replace />;
   }
 
