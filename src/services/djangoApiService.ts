@@ -5,15 +5,19 @@ import { toast } from "@/hooks/use-toast";
 export class DjangoApiService {
   private baseUrl: string;
   private token: string | null = null;
+  private isRefreshing: boolean = false;
+  private refreshPromise: Promise<void> | null = null;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_DJANGO_API_URL || 'http://localhost:8000/api';
+    this.baseUrl = 'http://localhost:8000/api';
+    console.log('DjangoApiService initialized with baseUrl:', this.baseUrl);
   }
 
   // Set authentication token
   setToken(token: string) {
     this.token = token;
     localStorage.setItem('django_token', token);
+    console.log('Token set successfully');
   }
 
   // Get stored token
@@ -28,12 +32,17 @@ export class DjangoApiService {
   clearToken() {
     this.token = null;
     localStorage.removeItem('django_token');
+    console.log('Token cleared');
   }
 
-  // Generic API request method
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // Generic API request method with timeout and retry logic
+  private async request<T>(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const token = this.getToken();
+    const maxRetries = 2;
+    const timeout = 10000; // 10 seconds
+
+    console.log(`API Request: ${options.method || 'GET'} ${url}`, { retryCount });
 
     const config: RequestInit = {
       headers: {
@@ -44,26 +53,58 @@ export class DjangoApiService {
       ...options,
     };
 
+    // Create timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), timeout);
+    });
+
     try {
-      const response = await fetch(url, config);
+      const response = await Promise.race([
+        fetch(url, config),
+        timeoutPromise
+      ]);
       
+      console.log(`API Response: ${response.status} ${response.statusText}`, { url });
+
       if (!response.ok) {
         if (response.status === 401) {
+          console.log('Authentication failed, clearing token');
           this.clearToken();
           throw new Error('Authentication required');
         }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          // Use default error message if JSON parsing fails
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      return await response.json();
-    } catch (error) {
+      const data = await response.json();
+      console.log('API Response data:', data);
+      return data;
+    } catch (error: any) {
       console.error(`API request failed: ${endpoint}`, error);
+      
+      // Retry logic for network errors (not auth errors)
+      if (retryCount < maxRetries && !error.message.includes('Authentication required')) {
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        console.log(`Retrying request after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.request(endpoint, options, retryCount + 1);
+      }
+      
       throw error;
     }
   }
 
   // Authentication methods
   async login(email: string, password: string) {
+    console.log('Attempting login for:', email);
     const response = await this.request<{
       user: any;
       access: string;
@@ -74,10 +115,12 @@ export class DjangoApiService {
     });
 
     this.setToken(response.access);
+    console.log('Login successful');
     return response;
   }
 
   async register(email: string, password: string, fullName?: string) {
+    console.log('Attempting registration for:', email);
     const response = await this.request<{
       user: any;
       access: string;
@@ -92,10 +135,12 @@ export class DjangoApiService {
     });
 
     this.setToken(response.access);
+    console.log('Registration successful');
     return response;
   }
 
   async getProfile() {
+    console.log('Fetching user profile...');
     return this.request<any>('/auth/profile/');
   }
 

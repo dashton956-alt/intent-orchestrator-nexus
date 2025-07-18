@@ -26,18 +26,48 @@ const queryClient = new QueryClient({
   },
 });
 
+// Loading component
+const LoadingScreen = ({ message }: { message?: string }) => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+    <div className="text-center">
+      <div className="text-white text-xl mb-4">
+        {message || "Loading..."}
+      </div>
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+    </div>
+  </div>
+);
+
+// Error component
+const ErrorScreen = ({ error, onRetry }: { error: string; onRetry?: () => void }) => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+    <div className="text-center max-w-md mx-auto p-6">
+      <div className="text-red-400 text-xl mb-4">Connection Error</div>
+      <div className="text-white text-sm mb-6">{error}</div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Retry Connection
+        </button>
+      )}
+    </div>
+  </div>
+);
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useDjangoAuth();
+  const { user, loading, error } = useDjangoAuth();
 
-  console.log('ProtectedRoute - user:', user, 'loading:', loading);
+  console.log('ProtectedRoute - user:', user, 'loading:', loading, 'error:', error);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
+    return <LoadingScreen message="Authenticating..." />;
+  }
+
+  if (error && !user) {
+    return <ErrorScreen error={error} onRetry={() => window.location.reload()} />;
   }
 
   if (!user) {
@@ -50,16 +80,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Public Route Component
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useDjangoAuth();
+  const { user, loading, error } = useDjangoAuth();
 
-  console.log('PublicRoute - user:', user, 'loading:', loading);
+  console.log('PublicRoute - user:', user, 'loading:', loading, 'error:', error);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
+    return <LoadingScreen message="Checking authentication..." />;
   }
 
   if (user) {
