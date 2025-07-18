@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected Route Component
+// Protected Route Component - Updated to use Django auth
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useDjangoAuth();
 
@@ -45,7 +45,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Public Route Component (redirect to dashboard if authenticated)
+// Public Route Component - Updated to use Django auth
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useDjangoAuth();
 
